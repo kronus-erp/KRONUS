@@ -112,69 +112,83 @@ with aba_empresa:
 # ABA 2: CONTABILIDADE & DEMONSTRAÇÕES
 # -------------------------------------------------------------------------
 with aba_contabilidade:
-  # Plano de Contas estruturado com os Grupos Principais visíveis
-  lista_contas = [
-      # --- ATIVO CIRCULANTE ---
-      "[ATIVO CIRCULANTE] 1.1.1.01 - Caixa Geral",
-      "[ATIVO CIRCULANTE] 1.1.1.02 - Bancos Conta Movimento",
-      "[ATIVO CIRCULANTE] 1.1.1.03 - Aplicações Financeiras de Liquidez Imediata",
-      "[ATIVO CIRCULANTE] 1.1.2.01 - Clientes Nacionais / Duplicatas a Receber",
-      "[ATIVO CIRCULANTE] 1.1.2.99 - (-) Provisão para Créditos de Liquidação Duvidosa",
-      "[ATIVO CIRCULANTE] 1.1.3.01 - Mercadorias para Revenda",
-      "[ATIVO CIRCULANTE] 1.1.3.02 - Matérias-Primas",
-      "[ATIVO CIRCULANTE] 1.1.3.03 - Produtos em Elaboração / Acabados",
-      # --- ATIVO NÃO CIRCULANTE ---
-      "[ATIVO NÃO CIRCULANTE] 1.2.1.01 - Móveis e Utensílios",
-      "[ATIVO NÃO CIRCULANTE] 1.2.1.02 - Máquinas e Equipamentos",
-      "[ATIVO NÃO CIRCULANTE] 1.2.1.03 - Equipamentos de Informática",
-      "[ATIVO NÃO CIRCULANTE] 1.2.1.09 - (-) Depreciação Acumulada",
-      "[ATIVO NÃO CIRCULANTE] 1.2.2.01 - Softwares e Licenças de Uso",
-      # --- PASSIVO CIRCULANTE ---
-      "[PASSIVO CIRCULANTE] 2.1.1.01 - Fornecedores Nacionais",
-      "[PASSIVO CIRCULANTE] 2.1.2.01 - Salários a Pagar",
-      "[PASSIVO CIRCULANTE] 2.1.2.02 - Férias e 13º Salário a Pagar",
-      "[PASSIVO CIRCULANTE] 2.1.2.03 - FGTS a Recolher",
-      "[PASSIVO CIRCULANTE] 2.1.3.01 - Simples Nacional (DAS) a Recolher",
-      "[PASSIVO CIRCULANTE] 2.1.3.02 - Retenções de ISS / IRRF / INSS sobre Serviços",
-      # --- PASSIVO NÃO CIRCULANTE ---
-      "[PASSIVO NÃO CIRCULANTE] 2.2.1.01 - Empréstimos e Financiamentos de Longo Prazo",
-      # --- PATRIMÔNIO LÍQUIDO ---
-      "[PATRIMÔNIO LÍQUIDO] 2.3.1.01 - Capital Subscrito / Realizado",
-      "[PATRIMÔNIO LÍQUIDO] 2.3.2.01 - Lucros Acumulados / Reserva de Lucros",
-      # --- RECEITAS ---
-      "[RECEITAS] 4.1.1.01 - Receita de Vendas de Mercadorias (Comércio)",
-      "[RECEITAS] 4.1.2.01 - Receita de Prestação de Serviços (Serviços)",
-      "[RECEITAS] 4.1.3.01 - Receita de Venda de Produtos (Indústria)",
-      "[RECEITAS] 4.2.1.01 - (-) Devoluções de Vendas",
-      "[RECEITAS] 4.2.2.01 - (-) Abatimentos e Descontos Concedidos",
-      # --- CUSTOS E DESPESAS ---
-      "[CUSTOS E DESPESAS] 5.1.1.01 - Custo das Mercadorias Vendidas (CMV)",
-      "[CUSTOS E DESPESAS] 5.1.2.01 - Custo dos Serviços Prestados (CSP)",
-      "[CUSTOS E DESPESAS] 5.1.3.01 - Custo dos Produtos Vendidos (CPV)",
-      "[CUSTOS E DESPESAS] 5.2.1.01 - Salários e Ordenados",
-      "[CUSTOS E DESPESAS] 5.2.1.02 - Encargos Sociais (INSS / FGTS)",
-      "[CUSTOS E DESPESAS] 5.2.1.03 - Benefícios (Vale Transporte, Vale Alimentação)",
-      "[CUSTOS E DESPESAS] 5.2.2.01 - Aluguel e Condomínio",
-      "[CUSTOS E DESPESAS] 5.2.2.02 - Energia Elétrica, Água, Internet e Telefone",
-      "[CUSTOS E DESPESAS] 5.2.2.03 - Honorários Contábeis",
-      "[CUSTOS E DESPESAS] 5.2.2.04 - Material de Escritório",
-      "[CUSTOS E DESPESAS] 5.2.3.01 - Simples Nacional (DAS) - Despesa Tributária",
-      "[CUSTOS E DESPESAS] 5.2.3.02 - Taxas e Licenças Diversas",
-  ]
+  # Plano de Contas Hierárquico Completo (Simples Nacional - ITG 1000)
+  # Dicionário organizando as contas por Grupos principais
+  plano_de_contas = {
+      "ATIVO CIRCULANTE": [
+          "1.1.1.01 - Caixa Geral",
+          "1.1.1.02 - Bancos Conta Movimento",
+          "1.1.1.03 - Aplicações Financeiras de Liquidez Imediata",
+          "1.1.2.01 - Clientes Nacionais / Duplicatas a Receber",
+          "1.1.2.99 - (-) Provisão para Créditos de Liquidação Duvidosa",
+          "1.1.3.01 - Mercadorias para Revenda",
+          "1.1.3.02 - Matérias-Primas",
+          "1.1.3.03 - Produtos em Elaboração / Acabados",
+      ],
+      "ATIVO NÃO CIRCULANTE": [
+          "1.2.1.01 - Móveis e Utensílios",
+          "1.2.1.02 - Máquinas e Equipamentos",
+          "1.2.1.03 - Equipamentos de Informática",
+          "1.2.1.09 - (-) Depreciação Acumulada",
+          "1.2.2.01 - Softwares e Licenças de Uso",
+      ],
+      "PASSIVO CIRCULANTE": [
+          "2.1.1.01 - Fornecedores Nacionais",
+          "2.1.2.01 - Salários a Pagar",
+          "2.1.2.02 - Férias e 13º Salário a Pagar",
+          "2.1.2.03 - FGTS a Recolher",
+          "2.1.3.01 - Simples Nacional (DAS) a Recolher",
+          "2.1.3.02 - Retenções de ISS / IRRF / INSS sobre Serviços",
+      ],
+      "PASSIVO NÃO CIRCULANTE": [
+          "2.2.1.01 - Empréstimos e Financiamentos de Longo Prazo",
+      ],
+      "PATRIMÔNIO LÍQUIDO": [
+          "2.3.1.01 - Capital Subscrito / Realizado",
+          "2.3.2.01 - Lucros Acumulados / Reserva de Lucros",
+      ],
+      "RECEITAS": [
+          "4.1.1.01 - Receita de Vendas de Mercadorias (Comércio)",
+          "4.1.2.01 - Receita de Prestação de Serviços (Serviços)",
+          "4.1.3.01 - Receita de Venda de Produtos (Indústria)",
+          "4.2.1.01 - (-) Devoluções de Vendas",
+          "4.2.2.01 - (-) Abatimentos e Descontos Concedidos",
+      ],
+      "CUSTOS E DESPESAS": [
+          "5.1.1.01 - Custo das Mercadorias Vendidas (CMV)",
+          "5.1.2.01 - Custo dos Serviços Prestados (CSP)",
+          "5.1.3.01 - Custo dos Produtos Vendidos (CPV)",
+          "5.2.1.01 - Salários e Ordenados",
+          "5.2.1.02 - Encargos Sociais (INSS / FGTS)",
+          "5.2.1.03 - Benefícios (Vale Transporte, Vale Alimentação)",
+          "5.2.2.01 - Aluguel e Condomínio",
+          "5.2.2.02 - Energia Elétrica, Água, Internet e Telefone",
+          "5.2.2.03 - Honorários Contábeis",
+          "5.2.2.04 - Material de Escritório",
+          "5.2.3.01 - Simples Nacional (DAS) - Despesa Tributária",
+          "5.2.3.02 - Taxas e Licenças Diversas",
+      ],
+  }
+
+  # Lista plana para seletores e loops rápidos
+  lista_contas = []
+  for grupo, contas in plano_de_contas.items():
+    for c in contas:
+      lista_contas.append(c)
 
   dados_iniciais = [
       {
           "Data": "2026-11-01",
           "Historico": "Saldo Inicial Capital",
-          "Débito": "[ATIVO CIRCULANTE] 1.1.1.02 - Bancos Conta Movimento",
-          "Crédito": "[PATRIMÔNIO LÍQUIDO] 2.3.1.01 - Capital Subscrito / Realizado",
+          "Débito": "1.1.1.02 - Bancos Conta Movimento",
+          "Crédito": "2.3.1.01 - Capital Subscrito / Realizado",
           "Valor": 150000.0,
       },
       {
           "Data": "2026-11-02",
           "Historico": "Recebimento de Prestação de Serviços",
-          "Débito": "[ATIVO CIRCULANTE] 1.1.1.02 - Bancos Conta Movimento",
-          "Crédito": "[RECEITAS] 4.1.2.01 - Receita de Prestação de Serviços (Serviços)",
+          "Débito": "1.1.1.02 - Bancos Conta Movimento",
+          "Crédito": "4.1.2.01 - Receita de Prestação de Serviços (Serviços)",
           "Valor": 24.0,
       },
   ]
@@ -198,14 +212,26 @@ with aba_contabilidade:
   df_lanc = st.session_state.df_lancamentos
 
   # Apurações
-  total_receitas = df_lanc[df_lanc["Crédito"].str.contains("RECEITAS", na=False) & df_lanc["Crédito"].str.contains("4.1", na=False)]["Valor"].sum()
-  deducoes_receita = df_lanc[df_lanc["Débito"].str.contains("RECEITAS", na=False) & df_lanc["Débito"].str.contains("4.2", na=False)]["Valor"].sum()
+  total_receitas = df_lanc[
+      df_lanc["Crédito"].isin(plano_de_contas["RECEITAS"])
+      & df_lanc["Crédito"].str.contains("4.1", na=False)
+  ]["Valor"].sum()
+  deducoes_receita = df_lanc[
+      df_lanc["Débito"].isin(plano_de_contas["RECEITAS"])
+      & df_lanc["Débito"].str.contains("4.2", na=False)
+  ]["Valor"].sum()
   receita_liquida = total_receitas - deducoes_receita
 
-  total_custos = df_lanc[df_lanc["Débito"].str.contains("CUSTOS E DESPESAS", na=False) & df_lanc["Débito"].str.contains("5.1", na=False)]["Valor"].sum()
+  total_custos = df_lanc[
+      df_lanc["Débito"].isin(plano_de_contas["CUSTOS E DESPESAS"])
+      & df_lanc["Débito"].str.contains("5.1", na=False)
+  ]["Valor"].sum()
   lucro_bruto = receita_liquida - total_custos
 
-  total_despesas = df_lanc[df_lanc["Débito"].str.contains("CUSTOS E DESPESAS", na=False) & df_lanc["Débito"].str.contains("5.2", na=False)]["Valor"].sum()
+  total_despesas = df_lanc[
+      df_lanc["Débito"].isin(plano_de_contas["CUSTOS E DESPESAS"])
+      & df_lanc["Débito"].str.contains("5.2", na=False)
+  ]["Valor"].sum()
   lucro_liquido = lucro_bruto - total_despesas
 
   # -------------------------------------------------------------------------
@@ -275,156 +301,4 @@ with aba_contabilidade:
       with st.form(f"form_editar_{idx_edit}"):
         col_e1, col_e2 = st.columns(2)
         with col_e1:
-          nova_data = st.text_input("Data (AAAA-MM-DD)", value=str(row_atual["Data"]))
-          deb_atual = str(row_atual.get("Débito", lista_contas[0]))
-          idx_deb = lista_contas.index(deb_atual) if deb_atual in lista_contas else 0
-          novo_debito = st.selectbox("Conta a DEBITAR", lista_contas, index=idx_deb)
-        with col_e2:
-          novo_valor = st.number_input("Valor (R$)", min_value=0.0, value=float(row_atual["Valor"]), format="%.2f", step=10.0)
-          cred_atual = str(row_atual.get("Crédito", lista_contas[0]))
-          idx_cred = lista_contas.index(cred_atual) if cred_atual in lista_contas else 0
-          novo_credito = st.selectbox("Conta a CREDITAR", lista_contas, index=idx_cred)
-
-        novo_hist = st.text_input("Histórico / Descrição", value=str(row_atual["Historico"]))
-        
-        col_salv, col_canc = st.columns(2)
-        with col_salv:
-          salvar_edicao = st.form_submit_button("💾 Guardar")
-        with col_canc:
-          cancelar_edicao = st.form_submit_button("❌ Cancelar")
-
-        if salvar_edicao:
-          if novo_debito == novo_credito:
-            st.error("Débito e Crédito não podem ser iguais!")
-          else:
-            st.session_state.df_lancamentos.loc[idx_edit, "Data"] = nova_data
-            st.session_state.df_lancamentos.loc[idx_edit, "Historico"] = novo_hist
-            st.session_state.df_lancamentos.loc[idx_edit, "Débito"] = novo_debito
-            st.session_state.df_lancamentos.loc[idx_edit, "Crédito"] = novo_credito
-            st.session_state.df_lancamentos.loc[idx_edit, "Valor"] = novo_valor
-            st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
-            st.session_state.editando_idx = None
-            st.success("Atualizado com sucesso! 🚀")
-            st.rerun()
-        if cancelar_edicao:
-          st.session_state.editando_idx = None
-          st.rerun()
-
-  st.markdown("---")
-
-  # -------------------------------------------------------------------------
-  # 2. LIVRO DIÁRIO
-  # -------------------------------------------------------------------------
-  st.header("2. Livro Diário (Registo Cronológico)")
-  st.dataframe(df_lanc, use_container_width=True)
-
-  # -------------------------------------------------------------------------
-  # 3. BALANÇO PATRIMONIAL POR SEÇÕES
-  # -------------------------------------------------------------------------
-  st.header("3. Balanço Patrimonial")
-
-  def calcular_secao(prefixo_grupo, tipo="ativo"):
-    dados = []
-    total_secao = 0.0
-    contas_filtradas = [c for c in lista_contas if prefixo_grupo in c]
-    for conta in contas_filtradas:
-      deb = df_lanc[df_lanc["Débito"] == conta]["Valor"].sum()
-      cred = df_lanc[df_lanc["Crédito"] == conta]["Valor"].sum()
-      saldo = (deb - cred) if tipo == "ativo" else (cred - deb)
-      if "Lucros Acumulados" in conta:
-        saldo += lucro_liquido
-      dados.append({"Conta": conta, "Saldo (R$)": saldo})
-      total_secao += saldo
-    return pd.DataFrame(dados), total_secao
-
-  st.subheader("🟢 ATIVO CIRCULANTE")
-  df_ac, tot_ac = calcular_secao("ATIVO CIRCULANTE", "ativo")
-  st.dataframe(df_ac, use_container_width=True)
-  st.markdown(f"**Total Ativo Circulante: R$ {tot_ac:.2f}**")
-
-  st.subheader("🔵 ATIVO NÃO CIRCULANTE")
-  df_anc, tot_anc = calcular_secao("ATIVO NÃO CIRCULANTE", "ativo")
-  st.dataframe(df_anc, use_container_width=True)
-  st.markdown(f"**Total Ativo Não Circulante: R$ {tot_anc:.2f}**")
-  st.markdown(f"### 📊 **TOTAL DO ATIVO: R$ {tot_ac + tot_anc:.2f}**")
-
-  st.markdown("---")
-
-  st.subheader("🟠 PASSIVO CIRCULANTE")
-  df_pc, tot_pc = calcular_secao("PASSIVO CIRCULANTE", "passivo")
-  st.dataframe(df_pc, use_container_width=True)
-  st.markdown(f"**Total Passivo Circulante: R$ {tot_pc:.2f}**")
-
-  st.subheader("🟤 PASSIVO NÃO CIRCULANTE")
-  df_pnc, tot_pnc = calcular_secao("PASSIVO NÃO CIRCULANTE", "passivo")
-  st.dataframe(df_pnc, use_container_width=True)
-  st.markdown(f"**Total Passivo Não Circulante: R$ {tot_pnc:.2f}**")
-
-  st.subheader("🟣 PATRIMÔNIO LÍQUIDO")
-  df_pl, tot_pl = calcular_secao("PATRIMÔNIO LÍQUIDO", "passivo")
-  st.dataframe(df_pl, use_container_width=True)
-  st.markdown(f"**Total Patrimônio Líquido: R$ {tot_pl:.2f}**")
-  st.markdown(f"### 📊 **TOTAL DO PASSIVO + PL: R$ {tot_pc + tot_pnc + tot_pl:.2f}**")
-
-  # -------------------------------------------------------------------------
-  # 4. DRE POR SEÇÕES
-  # -------------------------------------------------------------------------
-  st.header("4. DRE - Demonstração do Resultado do Exercício")
-  
-  st.subheader("📈 Receitas Operacionais")
-  df_rec, _ = calcular_secao("RECEITAS", "passivo")
-  st.dataframe(df_rec, use_container_width=True)
-  st.markdown(f"**Receita Líquida: R$ {receita_liquida:.2f}**")
-
-  st.subheader("📉 Custos e Despesas")
-  df_custos_desp, _ = calcular_secao("CUSTOS E DESPESAS", "ativo")
-  st.dataframe(df_custos_desp, use_container_width=True)
-  st.markdown(f"### 🎯 **Resultado Líquido do Exercício: R$ {lucro_liquido:.2f}**")
-
-  # 5. DFC
-  st.header("5. DFC - Demonstração dos Fluxos de Caixa (Método Direto)")
-  entradas_caixa = df_lanc[df_lanc["Débito"].str.contains("Caixa|Bancos", na=False)]["Valor"].sum()
-  saidas_caixa = df_lanc[df_lanc["Crédito"].str.contains("Caixa|Bancos", na=False)]["Valor"].sum()
-  variacao_caixa = entradas_caixa - saidas_caixa
-
-  dados_dfc = [
-      {"Fluxo de Caixa": "Entradas de Caixa (Disponibilidades)", "Valor (R$)": entradas_caixa},
-      {"Fluxo de Caixa": "Saídas de Caixa (Disponibilidades)", "Valor (R$)": -saidas_caixa},
-      {"Fluxo de Caixa": "(=) Variação Líquida de Caixa", "Valor (R$)": variacao_caixa},
-  ]
-  st.dataframe(pd.DataFrame(dados_dfc), use_container_width=True)
-
-  # 6. DVA
-  st.header("6. DVA - Demonstração do Valor Adicionado")
-  dados_dva = [
-      {"Especificação": "Receitas (Geração de Valor)", "Valor (R$)": total_receitas},
-      {"Especificação": "Insumos Adquiridos de Terceiros / Despesas", "Valor (R$)": -total_despesas},
-      {"Especificação": "(=) Valor Adicionado Líquido Produzido", "Valor (R$)": lucro_liquido},
-      {"Especificação": "Distribuição do Valor Adicionado (Lucros Retidos)", "Valor (R$)": lucro_liquido},
-  ]
-  st.dataframe(pd.DataFrame(dados_dva), use_container_width=True)
-
-  # 7. DMPL
-  st.header("7. DMPL - Demonstração das Mutações do Patrimônio Líquido")
-  capital_social_inicial = df_lanc[
-      (df_lanc["Crédito"].str.contains("PATRIMÔNIO LÍQUIDO", na=False))
-      & (df_lanc["Historico"].str.contains("Capital", na=False))
-  ]["Valor"].sum()
-
-  dados_dmpl = [
-      {
-          "Conta do PL": "Capital Subscrito / Realizado",
-          "Saldo Inicial (R$)": capital_social_inicial,
-          "Aumentos / Adições (R$)": 0.0,
-          "Resultado do Período (R$)": 0.0,
-          "Saldo Final (R$)": capital_social_inicial,
-      },
-      {
-          "Conta do PL": "Lucros Acumulados",
-          "Saldo Inicial (R$)": 0.0,
-          "Aumentos / Adições (R$)": 0.0,
-          "Resultado do Período (R$)": lucro_liquido,
-          "Saldo Final (R$)": lucro_liquido,
-      },
-  ]
-  st.dataframe(pd.DataFrame(dados_dmpl), use_container_width=True)
+          nova_data = st.text_input("Data (AAAA-MM-DD)", value=str(row
