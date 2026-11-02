@@ -54,8 +54,92 @@ aba_empresa, aba_lancamentos, aba_demonstracoes = st.tabs([
 ARQUIVO_RAZAO = "razao_analitico_caixa.csv"
 ARQUIVO_EMPRESA = "cadastro_empresa.csv"
 
-# Plano de Contas Simples Nacional (ITG 1000)
-plano_de_contas = {
+ARQUIVO_PLANO = "plano_de_contas.csv"
+
+# Plano de Contas Inicial Padrão (ITG 1000)
+plano_inicial_dict = {
+    "--- ATIVO CIRCULANTE ---": [
+        "1.1.1.01 - Caixa Geral",
+        "1.1.1.02 - Bancos Conta Movimento",
+        "1.1.1.03 - Aplicações Financeiras de Liquidez Imediata",
+        "1.1.2.01 - Clientes Nacionais / Duplicatas a Receber",
+        "1.1.3.01 - Mercadorias para Revenda",
+    ],
+    "--- ATIVO NÃO CIRCULANTE ---": [
+        "1.2.1.01 - Móveis e Utensílios",
+        "1.2.1.02 - Máquinas e Equipamentos",
+    ],
+    "--- PASSIVO CIRCULANTE ---": [
+        "2.1.1.01 - Fornecedores Nacionais",
+        "2.1.3.01 - Simples Nacional (DAS) a Recolher",
+    ],
+    "--- PASSIVO NÃO CIRCULANTE ---": [
+        "2.2.1.01 - Empréstimos de Longo Prazo",
+    ],
+    "--- PATRIMÔNIO LÍQUIDO ---": [
+        "2.3.1.01 - Capital Subscrito / Realizado",
+        "2.3.2.01 - Lucros Acumulados",
+    ],
+    "--- RECEITAS ---": [
+        "4.1.1.01 - Receita de Vendas de Mercadorias",
+        "4.1.2.01 - Receita de Prestação de Serviços",
+    ],
+    "--- CUSTOS E DESPESAS ---": [
+        "5.1.1.01 - Custo das Mercadorias Vendidas (CMV)",
+        "5.2.1.01 - Salários e Ordenados",
+        "5.2.2.01 - Aluguel e Condomínio",
+        "5.2.2.03 - Honorários Contábeis",
+        "5.2.3.01 - Simples Nacional (DAS) - Despesa Tributária",
+    ],
+}
+
+# Gestão do Plano de Contas em Session State / CSV
+if "plano_de_contas" not in st.session_state:
+  if os.path.exists(ARQUIVO_PLANO):
+    try:
+      df_p = pd.read_csv(ARQUIVO_PLANO, sep=";")
+      # Reconstruir o dicionário a partir do CSV
+      p_dict = {}
+      for grp in df_p["Grupo"].unique():
+        p_dict[grp] = df_p[df_p["Grupo"] == grp]["Conta"].tolist()
+      st.session_state.plano_de_contas = p_dict
+    except:
+      st.session_state.plano_de_contas = plano_inicial_dict
+  else:
+    st.session_state.plano_de_contas = plano_inicial_dict
+
+plano_de_contas = st.session_state.plano_de_contas
+
+
+# Secção para Adicionar Nova Conta (podes colocar na Aba de Cadastro ou Lançamentos)
+with st.expander("➕ Adicionar Nova Conta Analítica ao Plano de Contas"):
+  with st.form("form_nova_conta"):
+    grupo_escolhido = st.selectbox(
+        "Selecione o Grupo / Cabeçalho", list(plano_de_contas.keys())
+    )
+    nova_conta_str = st.text_input(
+        "Nome/Código da Conta (ex: 5.2.2.05 - Despesas com Alimentação)"
+    )
+    btn_salvar_conta = st.form_submit_button("💾 Guardar Nova Conta")
+
+    if btn_salvar_conta:
+      if nova_conta_str and nova_conta_str not in plano_de_contas[grupo_escolhido]:
+        plano_de_contas[grupo_escolhido].append(nova_conta_str)
+
+        # Salvar em CSV
+        registos_plano = []
+        for g, contas in plano_de_contas.items():
+          for c in contas:
+            registos_plano.append({"Grupo": g, "Conta": c})
+        pd.DataFrame(registos_plano).to_csv(ARQUIVO_PLANO, index=False, sep=";")
+
+        st.success(f"Conta '{nova_conta_str}' adicionada com sucesso! 🚀")
+        st.rerun()
+      else:
+        st.error(
+            "Preencha o nome da conta ou verifique se ela já existe no grupo."
+        )
+
     "--- ATIVO CIRCULANTE ---": [
         "1.1.1.01 - Caixa Geral",
         "1.1.1.02 - Bancos Conta Movimento",
