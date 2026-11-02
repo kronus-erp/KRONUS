@@ -11,28 +11,6 @@ st.markdown(
     "Módulo Financeiro e Contábil em Nuvem | *Utilizador: Contador*"
 )
 
-# 1. Carregar Balanço Patrimonial
-st.header("1. Balanço Patrimonial")
-try:
-  with open("balanco_patrimonial_kronus.txt", "r", encoding="utf-8") as f:
-    linhas = f.readlines()
-
-  dados_bp = []
-  for linha in linhas:
-    partes = linha.strip().split(";")
-    if len(partes) == 3:
-      dados_bp.append(
-          {"Grupo": partes[0], "Conta": partes[1], "Saldo (R$)": float(partes[2])}
-      )
-
-  df_bp = pd.DataFrame(dados_bp)
-  st.dataframe(df_bp, use_container_width=True)
-except Exception as e:
-  st.warning(
-      "Ficheiro do balanço patrimonial não encontrado ou com formato a"
-      f" ajustar: {e}"
-  )
-
 # Lista de Contas para Partidas Dobradas
 lista_contas = [
     "Ativo Circulante - Disponível / Banco",
@@ -45,9 +23,6 @@ lista_contas = [
     "Resultado - Receitas Operacionais",
     "Resultado - Despesas Administrativas",
 ]
-
-# 2. Livro Razão e Lançamentos com Partidas Dobradas
-st.header("2. Livro Razão e Lançamentos Contábeis")
 
 ARQUIVO_CSV = "razao_analitico_caixa.csv"
 
@@ -96,7 +71,7 @@ dados_iniciais = [
     },
 ]
 
-# Carregar dados e garantir compatibilidade
+# Carregar lançamentos e garantir compatibilidade
 if "df_lancamentos" not in st.session_state:
   if os.path.exists(ARQUIVO_CSV):
     try:
@@ -111,6 +86,65 @@ if "df_lancamentos" not in st.session_state:
   else:
     st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
     st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
+
+# 1. Balanço Patrimonial Dinâmico Baseado nos Lançamentos
+st.header("1. Balanço Patrimonial (Atualizado em Tempo Real)")
+
+# Saldos base iniciais extraídos do ficheiro ou definidos estruturalmente
+saldos_base = {
+    "Ativo Circulante - Disponível / Banco": 150000.0,
+    "Ativo Circulante - Clientes": 35000.0,
+    "Ativo Não Circulante - Imobilizado": 330000.0,
+    "Passivo Circulante - Fornecedores": 45000.0,
+    "Passivo Circulante - Obrigações Trabalhistas": 25000.0,
+    "Patrimônio Líquido - Capital Social": 400000.0,
+    "Patrimônio Líquido - Lucros Acumulados": 15000.0,
+}
+
+df_lanc = st.session_state.df_lancamentos
+
+# Calcular saldos dinâmicos para o Balanço
+dados_bp_dinamico = []
+
+for conta_completa, saldo_inicial in saldos_base.items():
+  # Calcular total de débitos e créditos para esta conta nos lançamentos
+  deb = df_lanc[df_lanc["Débito"] == conta_completa]["Valor"].sum()
+  cred = df_lanc[df_lanc["Crédito"] == conta_completa]["Valor"].sum()
+
+  # Contas de Ativo aumentam com Débito e diminuem com Crédito
+  if "Ativo" in conta_completa:
+    saldo_atual = saldo_inicial + deb - cred
+    grupo = conta_completa.split(" - ")[0]
+    nome_conta = conta_completa.split(" - ")[1]
+  # Contas de Passivo e PL aumentam com Crédito e diminuem com Débito
+  else:
+    saldo_atual = saldo_inicial + cred - deb
+    grupo = conta_completa.split(" - ")[0]
+    nome_conta = conta_completa.split(" - ")[1]
+
+  dados_bp_dinamico.append(
+      {"Grupo": grupo, "Conta": nome_conta, "Saldo (R$)": saldo_atual}
+  )
+
+# Adicionar o resultado líquido do exercício (Receitas - Despesas) acumulado em Lucros Acumulados
+total_receitas = df_lanc[
+    df_lanc["Crédito"] == "Resultado - Receitas Operacionais"
+]["Valor"].sum()
+total_despesas = df_lanc[
+    df_lanc["Débito"] == "Resultado - Despesas Administrativas"
+]["Valor"].sum()
+resultado_liquido = total_receitas - total_despesas
+
+# Ajustar o saldo de Lucros Acumulados com o resultado do período
+for item in dados_bp_dinamico:
+  if item["Conta"] == "Lucros Acumulados":
+    item["Saldo (R$)"] += resultado_liquido
+
+df_bp = pd.DataFrame(dados_bp_dinamico)
+st.dataframe(df_bp, use_container_width=True)
+
+# 2. Livro Razão e Lançamentos com Partidas Dobradas
+st.header("2. Livro Razão e Lançamentos Contábeis")
 
 # Controlo de edição na sessão
 if "editando_idx" not in st.session_state:
@@ -143,7 +177,7 @@ for idx, row in st.session_state.df_lancamentos.iterrows():
       st.rerun()
   st.markdown("---")
 
-# Se o utilizador clicou em editar numa linha específica, abre o painel de edição
+# Se o utilizador clicou em editar numa linha específica
 if st.session_state.editando_idx is not None:
   idx_edit = st.session_state.editando_idx
   if idx_edit in st.session_state.df_lancamentos.index:
@@ -154,18 +188,13 @@ if st.session_state.editando_idx is not None:
       col_e1, col_e2 = st.columns(2)
       with col_e1:
         nova_data = st.text_input("Data (AAAA-MM-DD)", value=str(row_atual["Data"]))
-        
-        # Obter índice seguro para o selectbox de Débito
         deb_atual = str(row_atual.get("Débito", lista_contas[0]))
         idx_deb = lista_contas.index(deb_atual) if deb_atual in lista_contas else 0
         novo_debito = st.selectbox("Conta a DEBITAR", lista_contas, index=idx_deb)
-        
       with col_e2:
         novo_valor = st.number_input(
             "Valor (R$)", min_value=0.0, value=float(row_atual["Valor"]), format="%.2f", step=10.0
         )
-        
-        # Obter índice seguro para o selectbox de Crédito
         cred_atual = str(row_atual.get("Crédito", lista_contas[0]))
         idx_cred = lista_contas.index(cred_atual) if cred_atual in lista_contas else 0
         novo_credito = st.selectbox("Conta a CREDITAR", lista_contas, index=idx_cred)
