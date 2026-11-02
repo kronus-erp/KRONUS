@@ -1,0 +1,7 @@
+Ativo Circulante;Disponível;150000.00
+Ativo Circulante;Clientes;85000.00
+Ativo Não Circulante;Imobilizado;300000.00
+Passivo Circulante;Fornecedores;45000.00
+Passivo Circulante;Obrigações Trabalhistas;25000.00
+Patrimônio Líquido;Capital Social;400000.00
+Patrimônio Líquido;Lucros Acumulados;65000.00
