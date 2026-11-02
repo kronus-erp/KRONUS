@@ -112,7 +112,6 @@ with aba_empresa:
 # ABA 2: CONTABILIDADE & DEMONSTRAÇÕES
 # -------------------------------------------------------------------------
 with aba_contabilidade:
-  # Plano de Contas Completo - Simples Nacional (ITG 1000)
   lista_contas = [
       # ATIVO CIRCULANTE
       "1.1.1.01 - Caixa Geral",
@@ -161,20 +160,6 @@ with aba_contabilidade:
       "5.2.3.02 - Taxas e Licenças Diversas",
   ]
 
-  # Mapeamento para agrupamento no Balanço e DRE
-  def get_grupo_ativo_passivo(conta):
-    if conta.startswith("1.1"):
-      return "Ativo Circulante"
-    elif conta.startswith("1.2"):
-      return "Ativo Não Circulante"
-    elif conta.startswith("2.1"):
-      return "Passivo Circulante"
-    elif conta.startswith("2.2"):
-      return "Passivo Não Circulante"
-    elif conta.startswith("2.3"):
-      return "Patrimônio Líquido"
-    return "Outros"
-
   dados_iniciais = [
       {
           "Data": "2026-11-01",
@@ -210,7 +195,7 @@ with aba_contabilidade:
 
   df_lanc = st.session_state.df_lancamentos
 
-  # Apurações para Demonstrações
+  # Apurações
   total_receitas = df_lanc[df_lanc["Crédito"].str.startswith("4.1")]["Valor"].sum()
   deducoes_receita = df_lanc[df_lanc["Débito"].str.startswith("4.2")]["Valor"].sum()
   receita_liquida = total_receitas - deducoes_receita
@@ -221,52 +206,93 @@ with aba_contabilidade:
   total_despesas = df_lanc[df_lanc["Débito"].str.startswith("5.2")]["Valor"].sum()
   lucro_liquido = lucro_bruto - total_despesas
 
-  # 1. Balanço Patrimonial Dinâmico
-  st.header("1. Balanço Patrimonial (Simples Nacional)")
-  
-  contas_bp = [
-      ("Ativo Circulante", "1.1.1.02 - Bancos Conta Movimento"),
-      ("Ativo Circulante", "1.1.1.01 - Caixa Geral"),
-      ("Ativo Circulante", "1.1.1.03 - Aplicações Financeiras de Liquidez Imediata"),
-      ("Ativo Circulante", "1.1.2.01 - Clientes Nacionais / Duplicatas a Receber"),
-      ("Ativo Circulante", "1.1.3.01 - Mercadorias para Revenda"),
-      ("Ativo Não Circulante", "1.2.1.02 - Máquinas e Equipamentos"),
-      ("Passivo Circulante", "2.1.1.01 - Fornecedores Nacionais"),
-      ("Passivo Circulante", "2.1.3.01 - Simples Nacional (DAS) a Recolher"),
-      ("Patrimônio Líquido", "2.3.1.01 - Capital Subscrito / Realizado"),
-      ("Patrimônio Líquido", "2.3.2.01 - Lucros Acumulados / Reserva de Lucros"),
-  ]
+  # -------------------------------------------------------------------------
+  # 1. BALANÇO PATRIMONIAL POR SEÇÕES
+  # -------------------------------------------------------------------------
+  st.header("1. Balanço Patrimonial")
 
-  dados_bp = []
-  for grupo, conta in contas_bp:
-    deb = df_lanc[df_lanc["Débito"] == conta]["Valor"].sum()
-    cred = df_lanc[df_lanc["Crédito"] == conta]["Valor"].sum()
-    saldo = (deb - cred) if grupo.startswith("Ativo") else (cred - deb)
-    
-    if "Lucros Acumulados" in conta:
-      saldo += lucro_liquido
+  def calcular_secao(contas_lista, tipo="ativo"):
+    dados = []
+    total_secao = 0.0
+    for conta in contas_lista:
+      deb = df_lanc[df_lanc["Débito"] == conta]["Valor"].sum()
+      cred = df_lanc[df_lanc["Crédito"] == conta]["Valor"].sum()
+      
+      if tipo == "ativo":
+        saldo = deb - cred
+      else: # passivo ou pl
+        saldo = cred - deb
 
-    dados_bp.append({"Grupo": grupo, "Conta": conta, "Saldo (R$)": saldo})
+      if "Lucros Acumulados" in conta:
+        saldo += lucro_liquido
 
-  st.dataframe(pd.DataFrame(dados_bp), use_container_width=True)
+      if saldo != 0.0 or True: # Mostrar mesmo com saldo zero para visual completo
+        dados.append({"Conta": conta, "Saldo (R$)": saldo})
+        total_secao += saldo
+    return pd.DataFrame(dados), total_secao
 
-  # 2. DRE
+  ativo_circulante_contas = [c for c in lista_contas if c.startswith("1.1")]
+  ativo_nao_circulante_contas = [c for c in lista_contas if c.startswith("1.2")]
+  passivo_circulante_contas = [c for c in lista_contas if c.startswith("2.1")]
+  passivo_nao_circulante_contas = [c for c in lista_contas if c.startswith("2.2")]
+  pl_contas = [c for c in lista_contas if c.startswith("2.3")]
+
+  st.subheader("🟢 ATIVO CIRCULANTE")
+  df_ac, tot_ac = calcular_secao(ativo_circulante_contas, "ativo")
+  st.dataframe(df_ac, use_container_width=True)
+  st.markdown(f"**Total Ativo Circulante: R$ {tot_ac:.2f}**")
+
+  st.subheader("🔵 ATIVO NÃO CIRCULANTE")
+  df_anc, tot_anc = calcular_secao(ativo_nao_circulante_contas, "ativo")
+  st.dataframe(df_anc, use_container_width=True)
+  st.markdown(f"**Total Ativo Não Circulante: R$ {tot_anc:.2f}**")
+  st.markdown(f"### 📊 **TOTAL DO ATIVO: R$ {tot_ac + tot_anc:.2f}**")
+
+  st.markdown("---")
+
+  st.subheader("🟠 PASSIVO CIRCULANTE")
+  df_pc, tot_pc = calcular_secao(passivo_circulante_contas, "passivo")
+  st.dataframe(df_pc, use_container_width=True)
+  st.markdown(f"**Total Passivo Circulante: R$ {tot_pc:.2f}**")
+
+  st.subheader("🟤 PASSIVO NÃO CIRCULANTE")
+  df_pnc, tot_pnc = calcular_secao(passivo_nao_circulante_contas, "passivo")
+  st.dataframe(df_pnc, use_container_width=True)
+  st.markdown(f"**Total Passivo Não Circulante: R$ {tot_pnc:.2f}**")
+
+  st.subheader("🟣 PATRIMÔNIO LÍQUIDO")
+  df_pl, tot_pl = calcular_secao(pl_contas, "passivo")
+  st.dataframe(df_pl, use_container_width=True)
+  st.markdown(f"**Total Patrimônio Líquido: R$ {tot_pl:.2f}**")
+  st.markdown(f"### 📊 **TOTAL DO PASSIVO + PL: R$ {tot_pc + tot_pnc + tot_pl:.2f}**")
+
+  # -------------------------------------------------------------------------
+  # 2. DRE POR SEÇÕES
+  # -------------------------------------------------------------------------
   st.header("2. DRE - Demonstração do Resultado do Exercício")
-  dados_dre = [
-      {"Demonstração": "(+) Receita Bruta de Vendas e Serviços", "Valor (R$)": total_receitas},
-      {"Demonstração": "(-) Deduções da Receita Bruta", "Valor (R$)": -deducoes_receita},
-      {"Demonstração": "(=) Receita Líquida", "Valor (R$)": receita_liquida},
-      {"Demonstração": "(-) Custos (CMV / CSP / CPV)", "Valor (R$)": -total_custos},
-      {"Demonstração": "(=) Lucro Bruto", "Valor (R$)": lucro_bruto},
-      {"Demonstração": "(-) Despesas Operacionais / Administrativas (incluindo DAS)", "Valor (R$)": -total_despesas},
-      {"Demonstração": "(=) Resultado Líquido do Exercício", "Valor (R$)": lucro_liquido},
-  ]
-  st.dataframe(pd.DataFrame(dados_dre), use_container_width=True)
+  
+  st.subheader("📈 Receitas Operacionais")
+  receitas_contas = [c for c in lista_contas if c.startswith("4.1") or c.startswith("4.2")]
+  df_rec, _ = calcular_secao(receitas_contas, "passivo")
+  st.dataframe(df_rec, use_container_width=True)
+  st.markdown(f"**Receita Líquida: R$ {receita_liquida:.2f}**")
+
+  st.subheader("📉 Custos das Vendas e Serviços")
+  custos_contas = [c for c in lista_contas if c.startswith("5.1")]
+  df_custos, _ = calcular_secao(custos_contas, "ativo")
+  st.dataframe(df_custos, use_container_width=True)
+  st.markdown(f"**Lucro Bruto: R$ {lucro_bruto:.2f}**")
+
+  st.subheader("📋 Despesas Operacionais e Administrativas (incluindo DAS)")
+  despesas_contas = [c for c in lista_contas if c.startswith("5.2")]
+  df_desp, _ = calcular_secao(despesas_contas, "ativo")
+  st.dataframe(df_desp, use_container_width=True)
+  st.markdown(f"### 🎯 **Resultado Líquido do Exercício: R$ {lucro_liquido:.2f}**")
 
   # 3. DFC
   st.header("3. DFC - Demonstração dos Fluxos de Caixa (Método Direto)")
-  entradas_caixa = df_lanc[df_lanc["Débito"].isin(["1.1.1.01 - Caixa Geral", "1.1.1.02 - Bancos Conta Movimento"])]["Valor"].sum()
-  saidas_caixa = df_lanc[df_lanc["Crédito"].isin(["1.1.1.01 - Caixa Geral", "1.1.1.02 - Bancos Conta Movimento"])]["Valor"].sum()
+  entradas_caixa = df_lanc[df_lanc["Débito"].str.contains("Caixa|Bancos", na=False)]["Valor"].sum()
+  saidas_caixa = df_lanc[df_lanc["Crédito"].str.contains("Caixa|Bancos", na=False)]["Valor"].sum()
   variacao_caixa = entradas_caixa - saidas_caixa
 
   dados_dfc = [
@@ -289,7 +315,7 @@ with aba_contabilidade:
   # 5. DMPL
   st.header("5. DMPL - Demonstração das Mutações do Patrimônio Líquido")
   capital_social_inicial = df_lanc[
-      (df_lanc["Crédito"] == "2.3.1.01 - Capital Subscrito / Realizado")
+      (df_lanc["Crédito"].str.startswith("2.3.1"))
       & (df_lanc["Historico"].str.contains("Capital", na=False))
   ]["Valor"].sum()
 
@@ -385,56 +411,4 @@ with aba_contabilidade:
             st.session_state.df_lancamentos.loc[idx_edit, "Historico"] = novo_hist
             st.session_state.df_lancamentos.loc[idx_edit, "Débito"] = novo_debito
             st.session_state.df_lancamentos.loc[idx_edit, "Crédito"] = novo_credito
-            st.session_state.df_lancamentos.loc[idx_edit, "Valor"] = novo_valor
-
-            st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
-            st.session_state.editando_idx = None
-            st.success("Lançamento atualizado e gravado com sucesso! 🚀")
-            st.rerun()
-
-        if cancelar_edicao:
-          st.session_state.editando_idx = None
-          st.rerun()
-
-  st.subheader("Novo Lançamento (Partidas Dobradas - Débito e Crédito)")
-  with st.form("form_partidas_dobradas", clear_on_submit=True):
-    col1, col2 = st.columns(2)
-    with col1:
-      data_lanc = st.date_input("Data do Lançamento")
-      conta_debito = st.selectbox("Conta a DEBITAR", lista_contas)
-    with col2:
-      valor_mov = st.number_input(
-          "Valor (R$)", min_value=0.0, format="%.2f", step=10.0
-      )
-      conta_credito = st.selectbox("Conta a CREDITAR", lista_contas)
-
-    historico = st.text_input(
-        "Histórico / Descrição",
-        placeholder="Ex: Pagamento de honorários ou DAS",
-    )
-
-    submitted = st.form_submit_button("Lançar Partida Dobrada")
-    if submitted:
-      if conta_debito == conta_credito:
-        st.error(
-            "A conta a debitar não pode ser igual à conta a creditar numa"
-            " partida dobrada!"
-        )
-      else:
-        novo_registo = pd.DataFrame(
-            [{
-                "Data": str(data_lanc),
-                "Historico": historico,
-                "Débito": conta_debito,
-                "Crédito": conta_credito,
-                "Valor": valor_mov,
-            }]
-        )
-        st.session_state.df_lancamentos = pd.concat(
-            [st.session_state.df_lancamentos, novo_registo], ignore_index=True
-        )
-        st.session_state.df_lancamentos.to_csv(
-            ARQUIVO_RAZAO, index=False, sep=";"
-        )
-        st.success("Lançamento efetuado e gravado com sucesso! 🚀")
-        st.rerun()
+            st.session_state.df_lancamentos.loc
