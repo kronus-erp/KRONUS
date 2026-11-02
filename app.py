@@ -504,9 +504,55 @@ with aba_demonstracoes:
       },
   ]
   st.dataframe(pd.DataFrame(dados_dmpl), use_container_width=True)
-  st.markdown("---")
-
+  st.markdown
+    
   # -------------------------------------------------------------------------
   # LIVROS FISCAIS E CONTÁBEIS OBRIGATÓRIOS (EXCLUSIVOS NA ABA DEMONSTRAÇÕES)
   # -------------------------------------------------------------------------
-  st.header("📚 Livros Fiscais e C
+  st.header("Livros Fiscais e Contabeis Obrigatorios")
+
+  # 1. Livro Diário
+  st.subheader("1. Livro Diario (Registo Cronologico)")
+  st.dataframe(df_lanc, use_container_width=True)
+  st.markdown("---")
+
+  # 2. Livro Caixa
+  st.subheader("2. Livro Caixa (Movimentacao de Caixa e Bancos)")
+  df_caixa = df_lanc[
+      df_lanc["Débito"].str.contains("Caixa|Bancos", na=False)
+      | df_lanc["Crédito"].str.contains("Caixa|Bancos", na=False)
+  ].copy()
+  if not df_caixa.empty:
+    st.dataframe(df_caixa, use_container_width=True)
+  else:
+    st.info("Nenhum lancamento registado nas contas de Caixa ou Bancos.")
+  st.markdown("---")
+
+  # 3. Livro Razão Analítico
+  st.subheader("3. Livro Razao Analitico por Conta")
+  conta_selecionada_razao = st.selectbox(
+      "Selecione a Conta Analitica para ver o Razao:", lista_contas_analiticas
+  )
+
+  df_razao_conta = df_lanc[
+      (df_lanc["Débito"] == conta_selecionada_razao)
+      | (df_lanc["Crédito"] == conta_selecionada_razao)
+  ].copy()
+
+  if not df_razao_conta.empty:
+    st.dataframe(df_razao_conta, use_container_width=True)
+    total_debitos_conta = df_lanc[df_lanc["Débito"] == conta_selecionada_razao][
+        "Valor"
+    ].sum()
+    total_creditos_conta = df_lanc[df_lanc["Crédito"] == conta_selecionada_razao][
+        "Valor"
+    ].sum()
+    st.markdown(
+        f"Totais na conta -- Debitos: R$ {total_debitos_conta:.2f} | Creditos:"
+        f" R$ {total_creditos_conta:.2f}"
+    )
+  else:
+    st.info(
+        f"Nao existem movimentos registados para a conta"
+        f" {conta_selecionada_razao}."
+    )
