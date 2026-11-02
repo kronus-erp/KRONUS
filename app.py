@@ -112,8 +112,9 @@ with aba_empresa:
 # ABA 2: CONTABILIDADE & DEMONSTRAÇÕES
 # -------------------------------------------------------------------------
 with aba_contabilidade:
+  # Plano de Contas estruturado hierarquicamente por secções limpas
   plano_de_contas = {
-      "ATIVO CIRCULANTE": [
+      "--- ATIVO CIRCULANTE ---": [
           "1.1.1.01 - Caixa Geral",
           "1.1.1.02 - Bancos Conta Movimento",
           "1.1.1.03 - Aplicações Financeiras de Liquidez Imediata",
@@ -123,14 +124,14 @@ with aba_contabilidade:
           "1.1.3.02 - Matérias-Primas",
           "1.1.3.03 - Produtos em Elaboração / Acabados",
       ],
-      "ATIVO NÃO CIRCULANTE": [
+      "--- ATIVO NÃO CIRCULANTE ---": [
           "1.2.1.01 - Móveis e Utensílios",
           "1.2.1.02 - Máquinas e Equipamentos",
           "1.2.1.03 - Equipamentos de Informática",
           "1.2.1.09 - (-) Depreciação Acumulada",
           "1.2.2.01 - Softwares e Licenças de Uso",
       ],
-      "PASSIVO CIRCULANTE": [
+      "--- PASSIVO CIRCULANTE ---": [
           "2.1.1.01 - Fornecedores Nacionais",
           "2.1.2.01 - Salários a Pagar",
           "2.1.2.02 - Férias e 13º Salário a Pagar",
@@ -138,21 +139,21 @@ with aba_contabilidade:
           "2.1.3.01 - Simples Nacional (DAS) a Recolher",
           "2.1.3.02 - Retenções de ISS / IRRF / INSS sobre Serviços",
       ],
-      "PASSIVO NÃO CIRCULANTE": [
+      "--- PASSIVO NÃO CIRCULANTE ---": [
           "2.2.1.01 - Empréstimos e Financiamentos de Longo Prazo",
       ],
-      "PATRIMÔNIO LÍQUIDO": [
+      "--- PATRIMÔNIO LÍQUIDO ---": [
           "2.3.1.01 - Capital Subscrito / Realizado",
           "2.3.2.01 - Lucros Acumulados / Reserva de Lucros",
       ],
-      "RECEITAS": [
+      "--- RECEITAS ---": [
           "4.1.1.01 - Receita de Vendas de Mercadorias (Comércio)",
           "4.1.2.01 - Receita de Prestação de Serviços (Serviços)",
           "4.1.3.01 - Receita de Venda de Produtos (Indústria)",
           "4.2.1.01 - (-) Devoluções de Vendas",
           "4.2.2.01 - (-) Abatimentos e Descontos Concedidos",
       ],
-      "CUSTOS E DESPESAS": [
+      "--- CUSTOS E DESPESAS ---": [
           "5.1.1.01 - Custo das Mercadorias Vendidas (CMV)",
           "5.1.2.01 - Custo dos Serviços Prestados (CSP)",
           "5.1.3.01 - Custo dos Produtos Vendidos (CPV)",
@@ -168,10 +169,18 @@ with aba_contabilidade:
       ],
   }
 
-  lista_contas = []
+  # Lista completa de todas as contas analíticas (sem cabeçalhos) para validação e cálculos
+  lista_contas_analiticas = []
   for grupo, contas in plano_de_contas.items():
     for c in contas:
-      lista_contas.append(c)
+      lista_contas_analiticas.append(c)
+
+  # Lista para o selectbox contendo os títulos das secções e as contas
+  opcoes_selectbox = []
+  for grupo, contas in plano_de_contas.items():
+    opcoes_selectbox.append(grupo)  # Título da secção como separador visual
+    for c in contas:
+      opcoes_selectbox.append(c)
 
   dados_iniciais = [
       {
@@ -208,23 +217,23 @@ with aba_contabilidade:
   df_lanc = st.session_state.df_lancamentos
 
   total_receitas = df_lanc[
-      df_lanc["Crédito"].isin(plano_de_contas["RECEITAS"])
+      df_lanc["Crédito"].isin(plano_de_contas["--- RECEITAS ---"])
       & df_lanc["Crédito"].str.contains("4.1", na=False)
   ]["Valor"].sum()
   deducoes_receita = df_lanc[
-      df_lanc["Débito"].isin(plano_de_contas["RECEITAS"])
+      df_lanc["Débito"].isin(plano_de_contas["--- RECEITAS ---"])
       & df_lanc["Débito"].str.contains("4.2", na=False)
   ]["Valor"].sum()
   receita_liquida = total_receitas - deducoes_receita
 
   total_custos = df_lanc[
-      df_lanc["Débito"].isin(plano_de_contas["CUSTOS E DESPESAS"])
+      df_lanc["Débito"].isin(plano_de_contas["--- CUSTOS E DESPESAS ---"])
       & df_lanc["Débito"].str.contains("5.1", na=False)
   ]["Valor"].sum()
   lucro_bruto = receita_liquida - total_custos
 
   total_despesas = df_lanc[
-      df_lanc["Débito"].isin(plano_de_contas["CUSTOS E DESPESAS"])
+      df_lanc["Débito"].isin(plano_de_contas["--- CUSTOS E DESPESAS ---"])
       & df_lanc["Débito"].str.contains("5.2", na=False)
   ]["Valor"].sum()
   lucro_liquido = lucro_bruto - total_despesas
@@ -242,16 +251,18 @@ with aba_contabilidade:
     col1, col2 = st.columns(2)
     with col1:
       data_lanc = st.date_input("Data do Lançamento")
-      conta_debito = st.selectbox("Conta a DEBITAR", lista_contas)
+      conta_debito = st.selectbox("Conta a DEBITAR", opcoes_selectbox)
     with col2:
       valor_mov = st.number_input("Valor (R$)", min_value=0.0, format="%.2f", step=10.0)
-      conta_credito = st.selectbox("Conta a CREDITAR", lista_contas)
+      conta_credito = st.selectbox("Conta a CREDITAR", opcoes_selectbox)
 
     historico = st.text_input("Histórico / Descrição", placeholder="Ex: Recebimento de cliente ou pagamento despesa")
 
     submitted = st.form_submit_button("Lançar Partida Dobrada")
     if submitted:
-      if conta_debito == conta_credito:
+      if conta_debito.startswith("---") or conta_credito.startswith("---"):
+        st.error("Por favor, selecione uma conta analítica válida (os títulos com '---' servem apenas como divisão).")
+      elif conta_debito == conta_credito:
         st.error("A conta a debitar não pode ser igual à conta a creditar numa partida dobrada!")
       else:
         novo_registo = pd.DataFrame([{
@@ -297,14 +308,14 @@ with aba_contabilidade:
         col_e1, col_e2 = st.columns(2)
         with col_e1:
           nova_data = st.text_input("Data (AAAA-MM-DD)", value=str(row_atual["Data"]))
-          deb_atual = str(row_atual.get("Débito", lista_contas[0]))
-          idx_deb = lista_contas.index(deb_atual) if deb_atual in lista_contas else 0
-          novo_debito = st.selectbox("Conta a DEBITAR", lista_contas, index=idx_deb)
+          deb_atual = str(row_atual.get("Débito", lista_contas_analiticas[0]))
+          idx_deb = opcoes_selectbox.index(deb_atual) if deb_atual in opcoes_selectbox else 0
+          novo_debito = st.selectbox("Conta a DEBITAR", opcoes_selectbox, index=idx_deb)
         with col_e2:
           novo_valor = st.number_input("Valor (R$)", min_value=0.0, value=float(row_atual["Valor"]), format="%.2f", step=10.0)
-          cred_atual = str(row_atual.get("Crédito", lista_contas[0]))
-          idx_cred = lista_contas.index(cred_atual) if cred_atual in lista_contas else 0
-          novo_credito = st.selectbox("Conta a CREDITAR", lista_contas, index=idx_cred)
+          cred_atual = str(row_atual.get("Crédito", lista_contas_analiticas[0]))
+          idx_cred = opcoes_selectbox.index(cred_atual) if cred_atual in opcoes_selectbox else 0
+          novo_credito = st.selectbox("Conta a CREDITAR", opcoes_selectbox, index=idx_cred)
 
         novo_hist = st.text_input("Histórico / Descrição", value=str(row_atual["Historico"]))
         
@@ -315,7 +326,9 @@ with aba_contabilidade:
           cancelar_edicao = st.form_submit_button("❌ Cancelar")
 
         if salvar_edicao:
-          if novo_debito == novo_credito:
+          if novo_debito.startswith("---") or novo_credito.startswith("---"):
+            st.error("Selecione uma conta analítica válida!")
+          elif novo_debito == novo_credito:
             st.error("Débito e Crédito não podem ser iguais!")
           else:
             st.session_state.df_lancamentos.loc[idx_edit, "Data"] = nova_data
@@ -361,12 +374,12 @@ with aba_contabilidade:
   st.subheader("🟢 ATIVO")
   
   st.markdown("##### Ativo Circulante")
-  df_ac, tot_ac = calcular_secao_hierarquica("ATIVO CIRCULANTE", "ativo")
+  df_ac, tot_ac = calcular_secao_hierarquica("--- ATIVO CIRCULANTE ---", "ativo")
   st.dataframe(df_ac, use_container_width=True)
   st.markdown(f"**Total Ativo Circulante: R$ {tot_ac:.2f}**")
 
   st.markdown("##### Ativo Não Circulante")
-  df_anc, tot_anc = calcular_secao_hierarquica("ATIVO NÃO CIRCULANTE", "ativo")
+  df_anc, tot_anc = calcular_secao_hierarquica("--- ATIVO NÃO CIRCULANTE ---", "ativo")
   st.dataframe(df_anc, use_container_width=True)
   st.markdown(f"**Total Ativo Não Circulante: R$ {tot_anc:.2f}**")
   
@@ -377,17 +390,17 @@ with aba_contabilidade:
   st.subheader("🟠 PASSIVO E PATRIMÔNIO LÍQUIDO")
   
   st.markdown("##### Passivo Circulante")
-  df_pc, tot_pc = calcular_secao_hierarquica("PASSIVO CIRCULANTE", "passivo")
+  df_pc, tot_pc = calcular_secao_hierarquica("--- PASSIVO CIRCULANTE ---", "passivo")
   st.dataframe(df_pc, use_container_width=True)
   st.markdown(f"**Total Passivo Circulante: R$ {tot_pc:.2f}**")
 
   st.markdown("##### Passivo Não Circulante")
-  df_pnc, tot_pnc = calcular_secao_hierarquica("PASSIVO NÃO CIRCULANTE", "passivo")
+  df_pnc, tot_pnc = calcular_secao_hierarquica("--- PASSIVO NÃO CIRCULANTE ---", "passivo")
   st.dataframe(df_pnc, use_container_width=True)
   st.markdown(f"**Total Passivo Não Circulante: R$ {tot_pnc:.2f}**")
 
   st.markdown("##### Patrimônio Líquido")
-  df_pl, tot_pl = calcular_secao_hierarquica("PATRIMÔNIO LÍQUIDO", "passivo")
+  df_pl, tot_pl = calcular_secao_hierarquica("--- PATRIMÔNIO LÍQUIDO ---", "passivo")
   st.dataframe(df_pl, use_container_width=True)
   st.markdown(f"**Total Patrimônio Líquido: R$ {tot_pl:.2f}**")
   
@@ -399,12 +412,12 @@ with aba_contabilidade:
   st.header("4. DRE - Demonstração do Resultado do Exercício")
   
   st.subheader("📈 Receitas")
-  df_rec, _ = calcular_secao_hierarquica("RECEITAS", "passivo")
+  df_rec, _ = calcular_secao_hierarquica("--- RECEITAS ---", "passivo")
   st.dataframe(df_rec, use_container_width=True)
   st.markdown(f"**Receita Líquida: R$ {receita_liquida:.2f}**")
 
   st.subheader("📉 Custos e Despesas")
-  df_desp, _ = calcular_secao_hierarquica("CUSTOS E DESPESAS", "ativo")
+  df_desp, _ = calcular_secao_hierarquica("--- CUSTOS E DESPESAS ---", "ativo")
   st.dataframe(df_desp, use_container_width=True)
   st.markdown(f"### 🎯 **Resultado Líquido do Exercício: R$ {lucro_liquido:.2f}**")
 
