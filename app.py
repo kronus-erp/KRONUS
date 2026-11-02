@@ -87,10 +87,9 @@ if "df_lancamentos" not in st.session_state:
     st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
     st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
 
-# 1. Balanço Patrimonial Dinâmico Baseado nos Lançamentos
+# 1. Balanço Patrimonial Dinâmico e Preciso
 st.header("1. Balanço Patrimonial (Atualizado em Tempo Real)")
 
-# Saldos base iniciais extraídos do ficheiro ou definidos estruturalmente
 saldos_base = {
     "Ativo Circulante - Disponível / Banco": 150000.0,
     "Ativo Circulante - Clientes": 35000.0,
@@ -102,31 +101,24 @@ saldos_base = {
 }
 
 df_lanc = st.session_state.df_lancamentos
-
-# Calcular saldos dinâmicos para o Balanço
 dados_bp_dinamico = []
 
 for conta_completa, saldo_inicial in saldos_base.items():
-  # Calcular total de débitos e créditos para esta conta nos lançamentos
   deb = df_lanc[df_lanc["Débito"] == conta_completa]["Valor"].sum()
   cred = df_lanc[df_lanc["Crédito"] == conta_completa]["Valor"].sum()
 
-  # Contas de Ativo aumentam com Débito e diminuem com Crédito
   if "Ativo" in conta_completa:
     saldo_atual = saldo_inicial + deb - cred
-    grupo = conta_completa.split(" - ")[0]
-    nome_conta = conta_completa.split(" - ")[1]
-  # Contas de Passivo e PL aumentam com Crédito e diminuem com Débito
   else:
     saldo_atual = saldo_inicial + cred - deb
-    grupo = conta_completa.split(" - ")[0]
-    nome_conta = conta_completa.split(" - ")[1]
 
+  grupo = conta_completa.split(" - ")[0]
+  nome_conta = conta_completa.split(" - ")[1]
   dados_bp_dinamico.append(
       {"Grupo": grupo, "Conta": nome_conta, "Saldo (R$)": saldo_atual}
   )
 
-# Adicionar o resultado líquido do exercício (Receitas - Despesas) acumulado em Lucros Acumulados
+# Calcular Resultado Líquido e aplicar em Lucros Acumulados
 total_receitas = df_lanc[
     df_lanc["Crédito"] == "Resultado - Receitas Operacionais"
 ]["Valor"].sum()
@@ -135,7 +127,6 @@ total_despesas = df_lanc[
 ]["Valor"].sum()
 resultado_liquido = total_receitas - total_despesas
 
-# Ajustar o saldo de Lucros Acumulados com o resultado do período
 for item in dados_bp_dinamico:
   if item["Conta"] == "Lucros Acumulados":
     item["Saldo (R$)"] += resultado_liquido
@@ -146,13 +137,11 @@ st.dataframe(df_bp, use_container_width=True)
 # 2. Livro Razão e Lançamentos com Partidas Dobradas
 st.header("2. Livro Razão e Lançamentos Contábeis")
 
-# Controlo de edição na sessão
 if "editando_idx" not in st.session_state:
   st.session_state.editando_idx = None
 
 st.subheader("Registo de Movimentos e Gestão por Linha")
 
-# Exibir os lançamentos com botões de Editar e Excluir lado a lado
 for idx, row in st.session_state.df_lancamentos.iterrows():
   col_info, col_edit, col_del = st.columns([4, 1, 1])
   with col_info:
@@ -177,7 +166,7 @@ for idx, row in st.session_state.df_lancamentos.iterrows():
       st.rerun()
   st.markdown("---")
 
-# Se o utilizador clicou em editar numa linha específica
+# Painel de Edição
 if st.session_state.editando_idx is not None:
   idx_edit = st.session_state.editando_idx
   if idx_edit in st.session_state.df_lancamentos.index:
