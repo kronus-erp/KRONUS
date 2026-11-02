@@ -112,67 +112,69 @@ with aba_empresa:
 # ABA 2: CONTABILIDADE & DEMONSTRAÇÕES
 # -------------------------------------------------------------------------
 with aba_contabilidade:
+  # Plano de Contas estruturado com os Grupos Principais visíveis
   lista_contas = [
-      # ATIVO CIRCULANTE
-      "1.1.1.01 - Caixa Geral",
-      "1.1.1.02 - Bancos Conta Movimento",
-      "1.1.1.03 - Aplicações Financeiras de Liquidez Imediata",
-      "1.1.2.01 - Clientes Nacionais / Duplicatas a Receber",
-      "1.1.2.99 - (-) Provisão para Créditos de Liquidação Duvidosa",
-      "1.1.3.01 - Mercadorias para Revenda",
-      "1.1.3.02 - Matérias-Primas",
-      "1.1.3.03 - Produtos em Elaboração / Acabados",
-      # ATIVO NÃO CIRCULANTE
-      "1.2.1.01 - Móveis e Utensílios",
-      "1.2.1.02 - Máquinas e Equipamentos",
-      "1.2.1.03 - Equipamentos de Informática",
-      "1.2.1.09 - (-) Depreciação Acumulada",
-      "1.2.2.01 - Softwares e Licenças de Uso",
-      # PASSIVO CIRCULANTE
-      "2.1.1.01 - Fornecedores Nacionais",
-      "2.1.2.01 - Salários a Pagar",
-      "2.1.2.02 - Férias e 13º Salário a Pagar",
-      "2.1.2.03 - FGTS a Recolher",
-      "2.1.3.01 - Simples Nacional (DAS) a Recolher",
-      "2.1.3.02 - Retenções de ISS / IRRF / INSS sobre Serviços",
-      # PASSIVO NÃO CIRCULANTE & PL
-      "2.2.1.01 - Empréstimos e Financiamentos de Longo Prazo",
-      "2.3.1.01 - Capital Subscrito / Realizado",
-      "2.3.2.01 - Lucros Acumulados / Reserva de Lucros",
-      # RECEITAS
-      "4.1.1.01 - Receita de Vendas de Mercadorias (Comércio)",
-      "4.1.2.01 - Receita de Prestação de Serviços (Serviços)",
-      "4.1.3.01 - Receita de Venda de Produtos (Indústria)",
-      "4.2.1.01 - (-) Devoluções de Vendas",
-      "4.2.2.01 - (-) Abatimentos e Descontos Concedidos",
-      # CUSTOS E DESPESAS
-      "5.1.1.01 - Custo das Mercadorias Vendidas (CMV)",
-      "5.1.2.01 - Custo dos Serviços Prestados (CSP)",
-      "5.1.3.01 - Custo dos Produtos Vendidos (CPV)",
-      "5.2.1.01 - Salários e Ordenados",
-      "5.2.1.02 - Encargos Sociais (INSS / FGTS)",
-      "5.2.1.03 - Benefícios (Vale Transporte, Vale Alimentação)",
-      "5.2.2.01 - Aluguel e Condomínio",
-      "5.2.2.02 - Energia Elétrica, Água, Internet e Telefone",
-      "5.2.2.03 - Honorários Contábeis",
-      "5.2.2.04 - Material de Escritório",
-      "5.2.3.01 - Simples Nacional (DAS) - Despesa Tributária",
-      "5.2.3.02 - Taxas e Licenças Diversas",
+      # --- ATIVO CIRCULANTE ---
+      "[ATIVO CIRCULANTE] 1.1.1.01 - Caixa Geral",
+      "[ATIVO CIRCULANTE] 1.1.1.02 - Bancos Conta Movimento",
+      "[ATIVO CIRCULANTE] 1.1.1.03 - Aplicações Financeiras de Liquidez Imediata",
+      "[ATIVO CIRCULANTE] 1.1.2.01 - Clientes Nacionais / Duplicatas a Receber",
+      "[ATIVO CIRCULANTE] 1.1.2.99 - (-) Provisão para Créditos de Liquidação Duvidosa",
+      "[ATIVO CIRCULANTE] 1.1.3.01 - Mercadorias para Revenda",
+      "[ATIVO CIRCULANTE] 1.1.3.02 - Matérias-Primas",
+      "[ATIVO CIRCULANTE] 1.1.3.03 - Produtos em Elaboração / Acabados",
+      # --- ATIVO NÃO CIRCULANTE ---
+      "[ATIVO NÃO CIRCULANTE] 1.2.1.01 - Móveis e Utensílios",
+      "[ATIVO NÃO CIRCULANTE] 1.2.1.02 - Máquinas e Equipamentos",
+      "[ATIVO NÃO CIRCULANTE] 1.2.1.03 - Equipamentos de Informática",
+      "[ATIVO NÃO CIRCULANTE] 1.2.1.09 - (-) Depreciação Acumulada",
+      "[ATIVO NÃO CIRCULANTE] 1.2.2.01 - Softwares e Licenças de Uso",
+      # --- PASSIVO CIRCULANTE ---
+      "[PASSIVO CIRCULANTE] 2.1.1.01 - Fornecedores Nacionais",
+      "[PASSIVO CIRCULANTE] 2.1.2.01 - Salários a Pagar",
+      "[PASSIVO CIRCULANTE] 2.1.2.02 - Férias e 13º Salário a Pagar",
+      "[PASSIVO CIRCULANTE] 2.1.2.03 - FGTS a Recolher",
+      "[PASSIVO CIRCULANTE] 2.1.3.01 - Simples Nacional (DAS) a Recolher",
+      "[PASSIVO CIRCULANTE] 2.1.3.02 - Retenções de ISS / IRRF / INSS sobre Serviços",
+      # --- PASSIVO NÃO CIRCULANTE ---
+      "[PASSIVO NÃO CIRCULANTE] 2.2.1.01 - Empréstimos e Financiamentos de Longo Prazo",
+      # --- PATRIMÔNIO LÍQUIDO ---
+      "[PATRIMÔNIO LÍQUIDO] 2.3.1.01 - Capital Subscrito / Realizado",
+      "[PATRIMÔNIO LÍQUIDO] 2.3.2.01 - Lucros Acumulados / Reserva de Lucros",
+      # --- RECEITAS ---
+      "[RECEITAS] 4.1.1.01 - Receita de Vendas de Mercadorias (Comércio)",
+      "[RECEITAS] 4.1.2.01 - Receita de Prestação de Serviços (Serviços)",
+      "[RECEITAS] 4.1.3.01 - Receita de Venda de Produtos (Indústria)",
+      "[RECEITAS] 4.2.1.01 - (-) Devoluções de Vendas",
+      "[RECEITAS] 4.2.2.01 - (-) Abatimentos e Descontos Concedidos",
+      # --- CUSTOS E DESPESAS ---
+      "[CUSTOS E DESPESAS] 5.1.1.01 - Custo das Mercadorias Vendidas (CMV)",
+      "[CUSTOS E DESPESAS] 5.1.2.01 - Custo dos Serviços Prestados (CSP)",
+      "[CUSTOS E DESPESAS] 5.1.3.01 - Custo dos Produtos Vendidos (CPV)",
+      "[CUSTOS E DESPESAS] 5.2.1.01 - Salários e Ordenados",
+      "[CUSTOS E DESPESAS] 5.2.1.02 - Encargos Sociais (INSS / FGTS)",
+      "[CUSTOS E DESPESAS] 5.2.1.03 - Benefícios (Vale Transporte, Vale Alimentação)",
+      "[CUSTOS E DESPESAS] 5.2.2.01 - Aluguel e Condomínio",
+      "[CUSTOS E DESPESAS] 5.2.2.02 - Energia Elétrica, Água, Internet e Telefone",
+      "[CUSTOS E DESPESAS] 5.2.2.03 - Honorários Contábeis",
+      "[CUSTOS E DESPESAS] 5.2.2.04 - Material de Escritório",
+      "[CUSTOS E DESPESAS] 5.2.3.01 - Simples Nacional (DAS) - Despesa Tributária",
+      "[CUSTOS E DESPESAS] 5.2.3.02 - Taxas e Licenças Diversas",
   ]
 
   dados_iniciais = [
       {
           "Data": "2026-11-01",
           "Historico": "Saldo Inicial Capital",
-          "Débito": "1.1.1.02 - Bancos Conta Movimento",
-          "Crédito": "2.3.1.01 - Capital Subscrito / Realizado",
+          "Débito": "[ATIVO CIRCULANTE] 1.1.1.02 - Bancos Conta Movimento",
+          "Crédito": "[PATRIMÔNIO LÍQUIDO] 2.3.1.01 - Capital Subscrito / Realizado",
           "Valor": 150000.0,
       },
       {
           "Data": "2026-11-02",
           "Historico": "Recebimento de Prestação de Serviços",
-          "Débito": "1.1.1.02 - Bancos Conta Movimento",
-          "Crédito": "4.1.2.01 - Receita de Prestação de Serviços (Serviços)",
+          "Débito": "[ATIVO CIRCULANTE] 1.1.1.02 - Bancos Conta Movimento",
+          "Crédito": "[RECEITAS] 4.1.2.01 - Receita de Prestação de Serviços (Serviços)",
           "Valor": 24.0,
       },
   ]
@@ -196,18 +198,18 @@ with aba_contabilidade:
   df_lanc = st.session_state.df_lancamentos
 
   # Apurações
-  total_receitas = df_lanc[df_lanc["Crédito"].str.startswith("4.1", na=False)]["Valor"].sum()
-  deducoes_receita = df_lanc[df_lanc["Débito"].str.startswith("4.2", na=False)]["Valor"].sum()
+  total_receitas = df_lanc[df_lanc["Crédito"].str.contains("RECEITAS", na=False) & df_lanc["Crédito"].str.contains("4.1", na=False)]["Valor"].sum()
+  deducoes_receita = df_lanc[df_lanc["Débito"].str.contains("RECEITAS", na=False) & df_lanc["Débito"].str.contains("4.2", na=False)]["Valor"].sum()
   receita_liquida = total_receitas - deducoes_receita
 
-  total_custos = df_lanc[df_lanc["Débito"].str.startswith("5.1", na=False)]["Valor"].sum()
+  total_custos = df_lanc[df_lanc["Débito"].str.contains("CUSTOS E DESPESAS", na=False) & df_lanc["Débito"].str.contains("5.1", na=False)]["Valor"].sum()
   lucro_bruto = receita_liquida - total_custos
 
-  total_despesas = df_lanc[df_lanc["Débito"].str.startswith("5.2", na=False)]["Valor"].sum()
+  total_despesas = df_lanc[df_lanc["Débito"].str.contains("CUSTOS E DESPESAS", na=False) & df_lanc["Débito"].str.contains("5.2", na=False)]["Valor"].sum()
   lucro_liquido = lucro_bruto - total_despesas
 
   # -------------------------------------------------------------------------
-  # GESTÃO DE LANÇAMENTOS (COLOCADO EM DESTAQUE NO TOPO DA ABA)
+  # 1. MÓDULO DE LANÇAMENTOS (TOPO)
   # -------------------------------------------------------------------------
   st.header("1. Módulo de Lançamentos (Partidas Dobradas)")
   st.markdown("Registe novas operações contábeis com débito e crédito cruzados.")
@@ -311,7 +313,7 @@ with aba_contabilidade:
   st.markdown("---")
 
   # -------------------------------------------------------------------------
-  # 2. LIVRO DIÁRIO E LIVRO RAZÃO
+  # 2. LIVRO DIÁRIO
   # -------------------------------------------------------------------------
   st.header("2. Livro Diário (Registo Cronológico)")
   st.dataframe(df_lanc, use_container_width=True)
@@ -321,10 +323,11 @@ with aba_contabilidade:
   # -------------------------------------------------------------------------
   st.header("3. Balanço Patrimonial")
 
-  def calcular_secao(contas_lista, tipo="ativo"):
+  def calcular_secao(prefixo_grupo, tipo="ativo"):
     dados = []
     total_secao = 0.0
-    for conta in contas_lista:
+    contas_filtradas = [c for c in lista_contas if prefixo_grupo in c]
+    for conta in contas_filtradas:
       deb = df_lanc[df_lanc["Débito"] == conta]["Valor"].sum()
       cred = df_lanc[df_lanc["Crédito"] == conta]["Valor"].sum()
       saldo = (deb - cred) if tipo == "ativo" else (cred - deb)
@@ -334,19 +337,13 @@ with aba_contabilidade:
       total_secao += saldo
     return pd.DataFrame(dados), total_secao
 
-  ativo_circulante_contas = [c for c in lista_contas if c.startswith("1.1")]
-  ativo_nao_circulante_contas = [c for c in lista_contas if c.startswith("1.2")]
-  passivo_circulante_contas = [c for c in lista_contas if c.startswith("2.1")]
-  passivo_nao_circulante_contas = [c for c in lista_contas if c.startswith("2.2")]
-  pl_contas = [c for c in lista_contas if c.startswith("2.3")]
-
   st.subheader("🟢 ATIVO CIRCULANTE")
-  df_ac, tot_ac = calcular_secao(ativo_circulante_contas, "ativo")
+  df_ac, tot_ac = calcular_secao("ATIVO CIRCULANTE", "ativo")
   st.dataframe(df_ac, use_container_width=True)
   st.markdown(f"**Total Ativo Circulante: R$ {tot_ac:.2f}**")
 
   st.subheader("🔵 ATIVO NÃO CIRCULANTE")
-  df_anc, tot_anc = calcular_secao(ativo_nao_circulante_contas, "ativo")
+  df_anc, tot_anc = calcular_secao("ATIVO NÃO CIRCULANTE", "ativo")
   st.dataframe(df_anc, use_container_width=True)
   st.markdown(f"**Total Ativo Não Circulante: R$ {tot_anc:.2f}**")
   st.markdown(f"### 📊 **TOTAL DO ATIVO: R$ {tot_ac + tot_anc:.2f}**")
@@ -354,17 +351,17 @@ with aba_contabilidade:
   st.markdown("---")
 
   st.subheader("🟠 PASSIVO CIRCULANTE")
-  df_pc, tot_pc = calcular_secao(passivo_circulante_contas, "passivo")
+  df_pc, tot_pc = calcular_secao("PASSIVO CIRCULANTE", "passivo")
   st.dataframe(df_pc, use_container_width=True)
   st.markdown(f"**Total Passivo Circulante: R$ {tot_pc:.2f}**")
 
   st.subheader("🟤 PASSIVO NÃO CIRCULANTE")
-  df_pnc, tot_pnc = calcular_secao(passivo_nao_circulante_contas, "passivo")
+  df_pnc, tot_pnc = calcular_secao("PASSIVO NÃO CIRCULANTE", "passivo")
   st.dataframe(df_pnc, use_container_width=True)
   st.markdown(f"**Total Passivo Não Circulante: R$ {tot_pnc:.2f}**")
 
   st.subheader("🟣 PATRIMÔNIO LÍQUIDO")
-  df_pl, tot_pl = calcular_secao(pl_contas, "passivo")
+  df_pl, tot_pl = calcular_secao("PATRIMÔNIO LÍQUIDO", "passivo")
   st.dataframe(df_pl, use_container_width=True)
   st.markdown(f"**Total Patrimônio Líquido: R$ {tot_pl:.2f}**")
   st.markdown(f"### 📊 **TOTAL DO PASSIVO + PL: R$ {tot_pc + tot_pnc + tot_pl:.2f}**")
@@ -375,21 +372,13 @@ with aba_contabilidade:
   st.header("4. DRE - Demonstração do Resultado do Exercício")
   
   st.subheader("📈 Receitas Operacionais")
-  receitas_contas = [c for c in lista_contas if c.startswith("4.1") or c.startswith("4.2")]
-  df_rec, _ = calcular_secao(receitas_contas, "passivo")
+  df_rec, _ = calcular_secao("RECEITAS", "passivo")
   st.dataframe(df_rec, use_container_width=True)
   st.markdown(f"**Receita Líquida: R$ {receita_liquida:.2f}**")
 
-  st.subheader("📉 Custos das Vendas e Serviços")
-  custos_contas = [c for c in lista_contas if c.startswith("5.1")]
-  df_custos, _ = calcular_secao(custos_contas, "ativo")
-  st.dataframe(df_custos, use_container_width=True)
-  st.markdown(f"**Lucro Bruto: R$ {lucro_bruto:.2f}**")
-
-  st.subheader("📋 Despesas Operacionais e Administrativas (incluindo DAS)")
-  despesas_contas = [c for c in lista_contas if c.startswith("5.2")]
-  df_desp, _ = calcular_secao(despesas_contas, "ativo")
-  st.dataframe(df_desp, use_container_width=True)
+  st.subheader("📉 Custos e Despesas")
+  df_custos_desp, _ = calcular_secao("CUSTOS E DESPESAS", "ativo")
+  st.dataframe(df_custos_desp, use_container_width=True)
   st.markdown(f"### 🎯 **Resultado Líquido do Exercício: R$ {lucro_liquido:.2f}**")
 
   # 5. DFC
@@ -418,7 +407,7 @@ with aba_contabilidade:
   # 7. DMPL
   st.header("7. DMPL - Demonstração das Mutações do Patrimônio Líquido")
   capital_social_inicial = df_lanc[
-      (df_lanc["Crédito"].str.startswith("2.3.1"))
+      (df_lanc["Crédito"].str.contains("PATRIMÔNIO LÍQUIDO", na=False))
       & (df_lanc["Historico"].str.contains("Capital", na=False))
   ]["Valor"].sum()
 
