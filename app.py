@@ -163,7 +163,7 @@ lancamentos_iniciais = [
     },
     {
         "Data": "2026-11-02",
-        "Historico": "Recebimento de Prestação de Serviços
+        "Historico": "Recebimento de Prestação de Serviços"
         "Débito": "1.1.1.02 - Bancos Conta Movimento",
         "Crédito": "4.1.2.01 - Receita de Prestação de Serviços (Serviços)",
         "Valor": 24.0,
