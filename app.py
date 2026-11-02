@@ -32,45 +32,75 @@ except Exception as e:
       f" ajustar: {e}"
   )
 
-# 2. Razão Analítico de Caixa e Lançamentos Editáveis
-st.header("2. Razão Analítico de Caixa e Lançamentos")
-try:
-  df_caixa = pd.read_csv("razao_analitico_caixa.csv", sep=";")
-  st.subheader("Registo Atual de Movimentos")
-  st.dataframe(df_caixa, use_container_width=True)
+# Lista de Contas para Partidas Dobradas
+lista_contas = [
+    "Ativo Circulante - Disponível / Banco",
+    "Ativo Circulante - Clientes",
+    "Ativo Não Circulante - Imobilizado",
+    "Passivo Circulante - Fornecedores",
+    "Passivo Circulante - Obrigações Trabalhistas",
+    "Patrimônio Líquido - Capital Social",
+    "Patrimônio Líquido - Lucros Acumulados",
+    "Resultado - Receitas Operacionais",
+    "Resultado - Despesas Administrativas",
+]
 
-  st.subheader("Novo Lançamento Contábil (Partidas Dobradas)")
-  with st.form("form_lancamento"):
-    col1, col2, col3 = st.columns(3)
-    with col1:
-      data_lanc = st.date_input("Data do Lançamento")
-    with col2:
-      historico = st.text_input(
-          "Histórico", placeholder="Ex: Pagamento de despesa"
-      )
-    with col3:
-      tipo_mov = st.selectbox("Tipo", ["Entrada", "Saida"])
+# 2. Razão Analítico de Caixa e Lançamentos com Partidas Dobradas
+st.header("2. Livro Razão e Lançamentos Contábeis")
 
+# Usar st.session_state para manter os lançamentos ativos na sessão
+if "df_lancamentos" not in st.session_state:
+  try:
+    st.session_state.df_lancamentos = pd.read_csv(
+        "razao_analitico_caixa.csv", sep=";"
+    )
+  except:
+    st.session_state.df_lancamentos = pd.DataFrame(
+        columns=["Data", "Historico", Debito, Credito, Valor]
+    )
+
+st.subheader("Registo de Movimentos e Partidas Dobradas")
+st.dataframe(st.session_state.df_lancamentos, use_container_width=True)
+
+st.subheader("Novo Lançamento (Partidas Dobradas - Débito e Crédito)")
+with st.form("form_partidas_dobradas", clear_on_submit=True):
+  col1, col2 = st.columns(2)
+  with col1:
+    data_lanc = st.date_input("Data do Lançamento")
+    conta_debito = st.selectbox("Conta a DEBITAR", lista_contas)
+  with col2:
     valor_mov = st.number_input(
         "Valor (R$)", min_value=0.0, format="%.2f", step=100.0
     )
+    conta_credito = st.selectbox("Conta a CREDITAR", lista_contas)
 
-    submitted = st.form_submit_button("Registar Lançamento")
-    if submitted:
+  historico = st.text_input(
+      "Histórico / Descrição",
+      placeholder="Ex: Recebimento de receita de vendas",
+  )
+
+  submitted = st.form_submit_button("Lançar Partida Dobrada")
+  if submitted:
+    if conta_debito == conta_credito:
+      st.error(
+          "A conta a debitar não pode ser igual à conta a creditar numa"
+          " partida dobrada!"
+      )
+    else:
       novo_registo = pd.DataFrame(
           [{
               "Data": str(data_lanc),
               "Historico": historico,
-              "Tipo": tipo_mov,
+              "Débito": conta_debito,
+              "Crédito": conta_credito,
               "Valor": valor_mov,
           }]
       )
-      df_caixa = pd.concat([df_caixa, novo_registo], ignore_index=True)
-      st.success(
-          "Lançamento efetuado com sucesso! (Podes exportar ou atualizar a"
-          " base)"
+      st.session_state.df_lancamentos = pd.concat(
+          [st.session_state.df_lancamentos, novo_registo], ignore_index=True
       )
-      st.dataframe(df_caixa, use_container_width=True)
-
-except Exception as e:
-  st.warning(f"Erro ao carregar o razão de caixa: {e}")
+      st.success(
+          "Lançamento de partidas dobradas efetuado e acumulado com"
+          " sucesso! 🚀"
+      )
+      st.rerun()
