@@ -87,49 +87,52 @@ if "df_lancamentos" not in st.session_state:
     st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
     st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
 
-# 1. Balanço Patrimonial Dinâmico e Preciso
-st.header("1. Balanço Patrimonial (Atualizado em Tempo Real)")
-
-saldos_base = {
-    "Ativo Circulante - Disponível / Banco": 150000.0,
-    "Ativo Circulante - Clientes": 35000.0,
-    "Ativo Não Circulante - Imobilizado": 330000.0,
-    "Passivo Circulante - Fornecedores": 45000.0,
-    "Passivo Circulante - Obrigações Trabalhistas": 25000.0,
-    "Patrimônio Líquido - Capital Social": 400000.0,
-    "Patrimônio Líquido - Lucros Acumulados": 15000.0,
-}
+# 1. Balanço Patrimonial 100% Dinâmico (Calculado exclusivamente com base nos lançamentos ativos)
+st.header("1. Balanço Patrimonial (Calculado em Tempo Real)")
 
 df_lanc = st.session_state.df_lancamentos
+
+# Mapear todas as contas do ativo, passivo e PL presentes na estrutura
+contas_patrimoniais = [
+    ("Ativo Circulante", "Disponível / Banco"),
+    ("Ativo Circulante", "Clientes"),
+    ("Ativo Não Circulante", "Imobilizado"),
+    ("Passivo Circulante", "Fornecedores"),
+    ("Passivo Circulante", "Obrigações Trabalhistas"),
+    ("Patrimônio Líquido", "Capital Social"),
+    ("Patrimônio Líquido", "Lucros Acumulados"),
+]
+
 dados_bp_dinamico = []
 
-for conta_completa, saldo_inicial in saldos_base.items():
-  deb = df_lanc[df_lanc["Débito"] == conta_completa]["Valor"].sum()
-  cred = df_lanc[df_lanc["Crédito"] == conta_completa]["Valor"].sum()
-
-  if "Ativo" in conta_completa:
-    saldo_atual = saldo_inicial + deb - cred
-  else:
-    saldo_atual = saldo_inicial + cred - deb
-
-  grupo = conta_completa.split(" - ")[0]
-  nome_conta = conta_completa.split(" - ")[1]
-  dados_bp_dinamico.append(
-      {"Grupo": grupo, "Conta": nome_conta, "Saldo (R$)": saldo_atual}
-  )
-
-# Calcular Resultado Líquido e aplicar em Lucros Acumulados
+# Calcular o resultado líquido (Receitas - Despesas) para apurar nos Lucros Acumulados
 total_receitas = df_lanc[
     df_lanc["Crédito"] == "Resultado - Receitas Operacionais"
 ]["Valor"].sum()
 total_despesas = df_lanc[
     df_lanc["Débito"] == "Resultado - Despesas Administrativas"
 ]["Valor"].sum()
-resultado_liquido = total_receitas - total_despesas
+lucro_liquido = total_receitas - total_despesas
 
-for item in dados_bp_dinamico:
-  if item["Conta"] == "Lucros Acumulados":
-    item["Saldo (R$)"] += resultado_liquido
+for grupo, nome_conta in contas_patrimoniais:
+  conta_completa = f"{grupo} - {nome_conta}"
+
+  # Somar débitos e créditos desta conta específica em todos os lançamentos ativos
+  deb = df_lanc[df_lanc["Débito"] == conta_completa]["Valor"].sum()
+  cred = df_lanc[df_lanc["Crédito"] == conta_completa]["Valor"].sum()
+
+  if grupo.startswith("Ativo"):
+    saldo = deb - cred
+  else:
+    saldo = cred - deb
+
+  # Se for Lucros Acumulados, adiciona o resultado líquido do exercício ao saldo apurado por lançamentos
+  if nome_conta == "Lucros Acumulados":
+    saldo += lucro_liquido
+
+  dados_bp_dinamico.append(
+      {"Grupo": grupo, "Conta": nome_conta, "Saldo (R$)": saldo}
+  )
 
 df_bp = pd.DataFrame(dados_bp_dinamico)
 st.dataframe(df_bp, use_container_width=True)
