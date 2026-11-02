@@ -51,7 +51,6 @@ st.header("2. Livro Razão e Lançamentos Contábeis")
 
 ARQUIVO_CSV = "razao_analitico_caixa.csv"
 
-# Dados iniciais padrão garantindo que os lançamentos de R$ 14 e R$ 10 estejam sempre presentes
 dados_iniciais = [
     {
         "Data": "2026-11-01",
@@ -97,13 +96,16 @@ dados_iniciais = [
     },
 ]
 
-# Carregar dados persistentes do ficheiro CSV do servidor ou criar com os dados padrão
+# Carregar dados e garantir compatibilidade de colunas
 if "df_lancamentos" not in st.session_state:
   if os.path.exists(ARQUIVO_CSV):
     try:
-      st.session_state.df_lancamentos = pd.read_csv(ARQUIVO_CSV, sep=";")
-      if st.session_state.df_lancamentos.empty:
+      df_lido = pd.read_csv(ARQUIVO_CSV, sep=";")
+      if "Débito" not in df_lido.columns or "Crédito" not in df_lido.columns:
         st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
+        st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
+      else:
+        st.session_state.df_lancamentos = df_lido
     except:
       st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
   else:
@@ -112,14 +114,16 @@ if "df_lancamentos" not in st.session_state:
 
 st.subheader("Registo de Movimentos e Gestão por Linha")
 
-# Exibir os lançamentos linha a linha com um botão de exclusão dedicado ao lado
+# Exibir os lançamentos linha a linha com o botão de excluir dedicado
 for idx, row in st.session_state.df_lancamentos.iterrows():
   col_info, col_btn = st.columns([5, 1])
   with col_info:
+    deb = row.get("Débito", "N/A")
+    cred = row.get("Crédito", "N/A")
     st.markdown(
         f"**[{idx}] Data:** {row['Data']} | **Hist:** {row['Historico']} |"
-        f" **Débito:** {row['Débito']} | **Crédito:** {row['Crédito']} |"
-        f" **Valor:** R$ {row['Valor']:.2f}"
+        f" **Débito:** {deb} | **Crédito:** {cred} | **Valor:** R$"
+        f" {row['Valor']:.2f}"
     )
   with col_btn:
     if st.button("🗑️ Excluir", key=f"btn_excluir_{idx}"):
