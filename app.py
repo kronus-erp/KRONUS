@@ -149,25 +149,25 @@ for grupo, contas in plano_de_contas.items():
 lancamentos_iniciais = [
     {
         "id": 1,
-        "historico": "Subscrição de Capital Social Inicial",
+        "historico": "Subscricao de Capital Social Inicial",
         "conta_debito": "2.3.1.02 - Capital Subscrito a Realizar",
         "conta_credito": "2.3.1.01 - Capital Subscrito / Realizado",
         "valor": 1500.00,
     },
     {
         "id": 2,
-        "historico": "Integralização de Capital Social em Bancos/Caixa",
-        "conta_debito": "1.1.1.02 - Bancos Conta Movimento",  # Ou 1.1.1.01 - Caixa Geral
+        "historico": "Integralizacao de Capital Social em Bancos/Caixa",
+        "conta_debito": "1.1.1.02 - Bancos Conta Movimento",
         "conta_credito": "2.3.1.02 - Capital Subscrito a Realizar",
         "valor": 1500.00,
     },
     {
-        "Data": "2026-11-02",
-        "Historico": "Recebimento de Prestação de Serviços"
-        "Debito": "1.1.1.02 - Bancos Conta Movimento",
-        "Crédito": "4.1.2.01 - Receita de Prestação de Serviços (Serviços)",
-        "Valor": 24.0,
-    },
+        "id": 3,
+        "historico": "Recebimento de Prestacao de Servicos",
+        "conta_debito": "1.1.1.02 - Bancos Conta Movimento",
+        "conta_credito": "4.1.2.01 - Receita de Prestacao de Servicos",
+        "valor": 24.00,
+    }
 ]
 
 if "df_lancamentos" not in st.session_state:
