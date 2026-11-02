@@ -509,5 +509,10 @@ with aba_lancamentos:
 # -------------------------------------------------------------------------
 with aba_demonstracoes:
   st.header("Demonstrações Contábeis Oficiais")
+  with aba_demonstracoes:
+  st.header("Demonstrações Contábeis Oficiais")
   st.markdown(
-      "Relatórios financeiros gerados em conform
+      "Relatórios financeiros gerados em conformidade com a legislação e ITG"
+      " 1000."
+  )
+
