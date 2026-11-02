@@ -498,7 +498,7 @@ with aba_demonstracoes:
       " 1000."
   )
 
-  def calcular_secao(nome_grupo, tipo="ativo"):
+    def calcular_secao(nome_grupo, tipo="ativo"):
     contas_grupo = plano_de_contas.get(nome_grupo, [])
     dados = []
     tot = 0.0
@@ -510,4 +510,4 @@ with aba_demonstracoes:
         saldo += lucro_liquido
       dados.append({"Conta": conta, "Saldo (R$)": saldo})
       tot += saldo
-    return pd.DataFrame(da
+    return pd.DataFrame(dados), tot
