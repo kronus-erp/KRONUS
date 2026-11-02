@@ -146,7 +146,7 @@ for grupo, contas in plano_de_contas.items():
   for c in contas:
     opcoes_selectbox.append(c)
 
-lancamentos_iniciais = [
+dados_iniciais = [
     {
         "id": 1,
         "historico": "Subscricao de Capital Social Inicial",
@@ -169,6 +169,7 @@ lancamentos_iniciais = [
         "valor": 24.00,
     }
 ]
+
 
 if "df_lancamentos" not in st.session_state:
   if os.path.exists(ARQUIVO_RAZAO):
