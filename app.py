@@ -48,29 +48,41 @@ lista_contas = [
 # 2. Livro Razão e Lançamentos com Partidas Dobradas
 st.header("2. Livro Razão e Lançamentos Contábeis")
 
-# Inicializar st.session_state com as colunas corretas
+# Garantir que a base de lançamentos fica guardada na sessão para não sumir ao interagir
 if "df_lancamentos" not in st.session_state:
   try:
     st.session_state.df_lancamentos = pd.read_csv(
         "razao_analitico_caixa.csv", sep=";"
     )
+    # Assegurar colunas padrão caso o CSV seja antigo
+    if "Débito" not in st.session_state.df_lancamentos.columns:
+      st.session_state.df_lancamentos["Débito"] = (
+          "Ativo Circulante - Disponível / Banco"
+      )
+    if "Crédito" not in st.session_state.df_lancamentos.columns:
+      st.session_state.df_lancamentos["Crédito"] = (
+          "Resultado - Receitas Operacionais"
+      )
   except:
     st.session_state.df_lancamentos = pd.DataFrame(
         columns=["Data", "Historico", "Débito", "Crédito", "Valor"]
     )
 
 st.subheader(
-    "Registo de Movimentos (Podes editar células ou apagar linhas diretamente"
-    " abaixo)"
+    "Registo de Movimentos (Podes editar células ou apagar linhas usando o"
+    " caixote do lixo)"
 )
 
-# st.data_editor permite editar e excluir linhas diretamente na tabela!
-st.session_state.df_lancamentos = st.data_editor(
+# Editor de dados interativo com suporte completo a exclusão e edição
+df_editado = st.data_editor(
     st.session_state.df_lancamentos,
     use_container_width=True,
     num_rows="dynamic",
     key="editor_movimentos",
 )
+
+# Atualiza a sessão automaticamente com as alterações feitas na tabela (incluindo exclusões)
+st.session_state.df_lancamentos = df_editado
 
 st.subheader("Novo Lançamento (Partidas Dobradas - Débito e Crédito)")
 with st.form("form_partidas_dobradas", clear_on_submit=True):
