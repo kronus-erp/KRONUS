@@ -6,10 +6,22 @@ st.set_page_config(
     page_title="KRONUS ERP - Contabilidade Completa", page_icon="📊", layout="wide"
 )
 
-st.title("📊 KRONUS S.A. - Sistema Integrado de Gestão Contábil")
+# -------------------------------------------------------------------------
+# CABEÇALHO COM LOGOTIPO E SLOGAN OFICIAL
+# -------------------------------------------------------------------------
+col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
+with col_logo2:
+  if os.path.exists("logo_kronus.png"):
+    st.image("logo_kronus.png", use_container_width=True)
+  else:
+    st.markdown("## **KRONUS S.A.**")
+
 st.markdown(
-    "Módulo Financeiro e Contábil em Nuvem | *Utilizador: Contador*"
+    "<h3 style='text-align: center; color: #555;'>KRONUS: Valor em cada"
+    " segundo</h3>",
+    unsafe_allow_html=True,
 )
+st.markdown("---")
 
 # Criar Abas Principais (Cadastro da Empresa em primeiro)
 aba_empresa, aba_contabilidade = st.tabs([
@@ -112,7 +124,6 @@ with aba_empresa:
 # ABA 2: CONTABILIDADE & DEMONSTRAÇÕES
 # -------------------------------------------------------------------------
 with aba_contabilidade:
-  # Plano de Contas estruturado hierarquicamente por secções limpas
   plano_de_contas = {
       "--- ATIVO CIRCULANTE ---": [
           "1.1.1.01 - Caixa Geral",
@@ -169,16 +180,14 @@ with aba_contabilidade:
       ],
   }
 
-  # Lista completa de todas as contas analíticas (sem cabeçalhos) para validação e cálculos
   lista_contas_analiticas = []
   for grupo, contas in plano_de_contas.items():
     for c in contas:
       lista_contas_analiticas.append(c)
 
-  # Lista para o selectbox contendo os títulos das secções e as contas
   opcoes_selectbox = []
   for grupo, contas in plano_de_contas.items():
-    opcoes_selectbox.append(grupo)  # Título da secção como separador visual
+    opcoes_selectbox.append(grupo)
     for c in contas:
       opcoes_selectbox.append(c)
 
@@ -463,8 +472,4 @@ with aba_contabilidade:
           "Conta do PL": "Lucros Acumulados",
           "Saldo Inicial (R$)": 0.0,
           "Aumentos / Adições (R$)": 0.0,
-          "Resultado do Período (R$)": lucro_liquido,
-          "Saldo Final (R$)": lucro_liquido,
-      },
-  ]
-  st.dataframe(pd.DataFrame(dados_dmpl), use_container_width=True)
+          "Resultado do Período (R$)": lu
