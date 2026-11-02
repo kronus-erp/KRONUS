@@ -81,11 +81,18 @@ with aba_contabilidade:
       },
   ]
 
-  # Carregar lançamentos e garantir compatibilidade
+  # Carregar lançamentos de forma limpa e segura
   if "df_lancamentos" not in st.session_state:
     if os.path.exists(ARQUIVO_CSV):
-      try:
-        df_lido = pd.read_csv(ARQUIVO_CSV, sep=";")
-        if "Débito" not in df_lido.columns or "Crédito" not in df_lido.columns:
-          st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
-          st.session_state.df_lanc
+      df_lido = pd.read_csv(ARQUIVO_CSV, sep=";")
+      if "Débito" not in df_lido.columns or "Crédito" not in df_lido.columns:
+        st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
+        st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
+      else:
+        st.session_state.df_lancamentos = df_lido
+    else:
+      st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
+      st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
+
+  df_lanc = st.session_state.df_lancamentos
+
