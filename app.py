@@ -65,22 +65,49 @@ if "df_lancamentos" not in st.session_state:
         columns=["Data", "Historico", "Débito", "Crédito", "Valor"]
     )
 
-st.subheader(
-    "Registo de Movimentos (Edite células ou remova linhas diretamente)"
-)
+st.subheader("Registo de Movimentos e Gestão de Lançamentos")
 
-# Editor de dados interativo
-df_editado = st.data_editor(
-    st.session_state.df_lancamentos,
-    use_container_width=True,
-    num_rows="dynamic",
-    key="editor_movimentos",
-)
+# Exibir tabela para visualização limpa
+st.dataframe(st.session_state.df_lancamentos, use_container_width=True)
 
-# Se houver alterações na tabela (edição ou exclusão), atualiza e guarda automaticamente no servidor
-if not df_editado.equals(st.session_state.df_lancamentos):
-  st.session_state.df_lancamentos = df_editado
-  st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
+# Secção Dedicada para Exclusão de Lançamentos de forma Segura
+if not st.session_state.df_lancamentos.empty:
+  st.markdown("### 🗑️ Excluir Lançamento Incorreto")
+  col_excluir_1, col_excluir_2 = st.columns([3, 1])
+
+  with col_excluir_1:
+    # Criar uma lista descritiva de cada linha para o contador selecionar facilmente
+    opcoes_linhas = []
+    for idx, row in st.session_state.df_lancamentos.iterrows():
+      desc = f"[{idx}] Data: {row['Data']} | Histórico: {row['Historico']} | Valor: R$ {row['Valor']}"
+      opcoes_linhas.append((idx, desc))
+
+    linha_selecionada_desc = st.selectbox(
+        "Selecione o lançamento que deseja excluir:",
+        options=[item[1] for item in opcoes_linhas],
+    )
+
+    # Descobrir o índice real da linha selecionada
+    idx_para_excluir = None
+    for item in opcoes_linhas:
+      if item[1] == linha_selecionada_desc:
+        idx_para_excluir = item[0]
+
+  with col_excluir_2:
+    st.write("")  # Espaçamento vertical para alinhar com o selectbox
+    st.write("")
+    if st.button("Excluir Registo"):
+      if idx_para_excluir is not None:
+        st.session_state.df_lancamentos = (
+            st.session_state.df_lancamentos.drop(idx_para_excluir)
+            .reset_index(drop=True)
+        )
+        # Salvar imediatamente a alteração no servidor
+        st.session_state.df_lancamentos.to_csv(
+            ARQUIVO_CSV, index=False, sep=";"
+        )
+        st.success("Lançamento excluído com sucesso! 🚀")
+        st.rerun()
 
 st.subheader("Novo Lançamento (Partidas Dobradas - Débito e Crédito)")
 with st.form("form_partidas_dobradas", clear_on_submit=True):
