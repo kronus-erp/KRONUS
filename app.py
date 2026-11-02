@@ -671,12 +671,6 @@ with aba_demonstracoes:
       "Selecione a Conta Analítica para ver o Razão:", lista_contas_analiticas
   )
 
-    # 3. Livro Razão Analítico
-  st.subheader("3. Livro Razão Analítico por Conta")
-  conta_selecionada_razao = st.selectbox(
-      "Selecione a Conta Analítica para ver o Razão:", lista_contas_analiticas
-  )
-
   df_razao_conta = df_lanc[
       (df_lanc["Débito"] == conta_selecionada_razao)
       | (df_lanc["Crédito"] == conta_selecionada_razao)
