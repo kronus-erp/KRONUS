@@ -45,10 +45,10 @@ lista_contas = [
     "Resultado - Despesas Administrativas",
 ]
 
-# 2. Razão Analítico de Caixa e Lançamentos com Partidas Dobradas
+# 2. Livro Razão e Lançamentos com Partidas Dobradas
 st.header("2. Livro Razão e Lançamentos Contábeis")
 
-# Usar st.session_state para manter os lançamentos ativos na sessão
+# Inicializar st.session_state com as colunas corretas
 if "df_lancamentos" not in st.session_state:
   try:
     st.session_state.df_lancamentos = pd.read_csv(
@@ -56,11 +56,21 @@ if "df_lancamentos" not in st.session_state:
     )
   except:
     st.session_state.df_lancamentos = pd.DataFrame(
-        columns=["Data", "Historico", Debito, Credito, Valor]
+        columns=["Data", "Historico", "Débito", "Crédito", "Valor"]
     )
 
-st.subheader("Registo de Movimentos e Partidas Dobradas")
-st.dataframe(st.session_state.df_lancamentos, use_container_width=True)
+st.subheader(
+    "Registo de Movimentos (Podes editar células ou apagar linhas diretamente"
+    " abaixo)"
+)
+
+# st.data_editor permite editar e excluir linhas diretamente na tabela!
+st.session_state.df_lancamentos = st.data_editor(
+    st.session_state.df_lancamentos,
+    use_container_width=True,
+    num_rows="dynamic",
+    key="editor_movimentos",
+)
 
 st.subheader("Novo Lançamento (Partidas Dobradas - Débito e Crédito)")
 with st.form("form_partidas_dobradas", clear_on_submit=True):
@@ -76,7 +86,7 @@ with st.form("form_partidas_dobradas", clear_on_submit=True):
 
   historico = st.text_input(
       "Histórico / Descrição",
-      placeholder="Ex: Recebimento de receita de vendas",
+      placeholder="Ex: Recebimento de comissão de terceiro",
   )
 
   submitted = st.form_submit_button("Lançar Partida Dobrada")
@@ -99,8 +109,5 @@ with st.form("form_partidas_dobradas", clear_on_submit=True):
       st.session_state.df_lancamentos = pd.concat(
           [st.session_state.df_lancamentos, novo_registo], ignore_index=True
       )
-      st.success(
-          "Lançamento de partidas dobradas efetuado e acumulado com"
-          " sucesso! 🚀"
-      )
+      st.success("Lançamento efetuado e acumulado com sucesso! 🚀")
       st.rerun()
