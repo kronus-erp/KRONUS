@@ -559,4 +559,49 @@ with aba_demonstracoes:
       },
   ]
   st.dataframe(pd.DataFrame(dados_dmpl), use_container_width=True)
+    # -------------------------------------------------------------------------
+# ADENSO: LIVRO CAIXA E LIVRO RAZÃO NA ABA DE DEMONSTRAÇÕES
+# -------------------------------------------------------------------------
+st.markdown("---")
+st.header("📚 Livros Fiscais e Contábeis Obrigatórios")
+
+# 1. Livro Caixa
+st.subheader("1. Livro Caixa (Movimentação de Caixa e Bancos)")
+df_caixa = df_lanc[
+    df_lanc["Débito"].str.contains("Caixa|Bancos", na=False)
+    | df_lanc["Crédito"].str.contains("Caixa|Bancos", na=False)
+].copy()
+if not df_caixa.empty:
+  st.dataframe(df_caixa, use_container_width=True)
+else:
+  st.info("Nenhum lançamento registado nas contas de Caixa ou Bancos.")
+
+# 2. Livro Razão Analítico
+st.subheader("2. Livro Razão Analítico por Conta")
+conta_selecionada_razao = st.selectbox(
+    "Selecione a Conta Analítica para ver o Razão:", lista_contas_analiticas
+)
+
+df_razao_conta = df_lanc[
+    (df_lanc["Débito"] == conta_selecionada_razao)
+    | (df_lanc["Crédito"] == conta_selecionada_razao)
+].copy()
+
+if not df_razao_conta.empty:
+  st.dataframe(df_razao_conta, use_container_width=True)
+  total_debitos_conta = df_lanc[df_lanc["Débito"] == conta_selecionada_razao][
+      "Valor"
+  ].sum()
+  total_creditos_conta = df_lanc[df_lanc["Crédito"] == conta_selecionada_razao][
+      "Valor"
+  ].sum()
+  st.markdown(
+      f"**Totais na conta — Débitos: R$ {total_debitos_conta:.2f} | Créditos:"
+      f" R$ {total_creditos_conta:.2f}**"
+  )
+else:
+  st.info(
+      f"Não existem movimentos registados para a conta"
+      f" {conta_selecionada_razao}."
+  )
     
