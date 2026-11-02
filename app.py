@@ -3,7 +3,7 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(
-    page_title="KRONUS ERP - Contabilidade", page_icon="📊", layout="wide"
+    page_title="KRONUS ERP - Contabilidade Completa", page_icon="📊", layout="wide"
 )
 
 st.title("📊 KRONUS S.A. - Sistema Integrado de Gestão Contábil")
@@ -87,12 +87,12 @@ if "df_lancamentos" not in st.session_state:
     st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
     st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
 
-# 1. Balanço Patrimonial 100% Dinâmico (Calculado exclusivamente com base nos lançamentos ativos)
-st.header("1. Balanço Patrimonial (Calculado em Tempo Real)")
-
 df_lanc = st.session_state.df_lancamentos
 
-# Mapear todas as contas do ativo, passivo e PL presentes na estrutura
+# -------------------------------------------------------------
+# 1. BALANÇO PATRIMONIAL DINÂMICO
+# -------------------------------------------------------------
+st.header("1. Balanço Patrimonial")
 contas_patrimoniais = [
     ("Ativo Circulante", "Disponível / Banco"),
     ("Ativo Circulante", "Clientes"),
@@ -103,9 +103,6 @@ contas_patrimoniais = [
     ("Patrimônio Líquido", "Lucros Acumulados"),
 ]
 
-dados_bp_dinamico = []
-
-# Calcular o resultado líquido (Receitas - Despesas) para apurar nos Lucros Acumulados
 total_receitas = df_lanc[
     df_lanc["Crédito"] == "Resultado - Receitas Operacionais"
 ]["Valor"].sum()
@@ -114,10 +111,9 @@ total_despesas = df_lanc[
 ]["Valor"].sum()
 lucro_liquido = total_receitas - total_despesas
 
+dados_bp = []
 for grupo, nome_conta in contas_patrimoniais:
   conta_completa = f"{grupo} - {nome_conta}"
-
-  # Somar débitos e créditos desta conta específica em todos os lançamentos ativos
   deb = df_lanc[df_lanc["Débito"] == conta_completa]["Valor"].sum()
   cred = df_lanc[df_lanc["Crédito"] == conta_completa]["Valor"].sum()
 
@@ -126,19 +122,84 @@ for grupo, nome_conta in contas_patrimoniais:
   else:
     saldo = cred - deb
 
-  # Se for Lucros Acumulados, adiciona o resultado líquido do exercício ao saldo apurado por lançamentos
   if nome_conta == "Lucros Acumulados":
     saldo += lucro_liquido
 
-  dados_bp_dinamico.append(
-      {"Grupo": grupo, "Conta": nome_conta, "Saldo (R$)": saldo}
-  )
+  dados_bp.append({"Grupo": grupo, "Conta": nome_conta, "Saldo (R$)": saldo})
 
-df_bp = pd.DataFrame(dados_bp_dinamico)
-st.dataframe(df_bp, use_container_width=True)
+st.dataframe(pd.DataFrame(dados_bp), use_container_width=True)
 
-# 2. Livro Razão e Lançamentos com Partidas Dobradas
-st.header("2. Livro Razão e Lançamentos Contábeis")
+# -------------------------------------------------------------
+# 2. DRE (DEMONSTRAÇÃO DO RESULTADO DO EXERCÍCIO)
+# -------------------------------------------------------------
+st.header("2. DRE - Demonstração do Resultado do Exercício")
+dados_dre = [
+    {"Demonstração": "Receitas Operacionais Brutas / Comissões", "Valor (R$)": total_receitas},
+    {"Demonstração": "(-) Despesas Administrativas", "Valor (R$)": -total_despesas},
+    {"Demonstração": "(=) Resultado Líquido do Exercício", "Valor (R$)": lucro_liquido},
+]
+st.dataframe(pd.DataFrame(dados_dre), use_container_width=True)
+
+# -------------------------------------------------------------
+# 3. DFC (DEMONSTRAÇÃO DOS FLUXOS DE CAIXA)
+# -------------------------------------------------------------
+st.header("3. DFC - Demonstração dos Fluxos de Caixa (Método Direto)")
+# Entradas e Saídas na conta Disponível / Banco
+entradas_caixa = df_lanc[df_lanc["Débito"] == "Ativo Circulante - Disponível / Banco"]["Valor"].sum()
+saidas_caixa = df_lanc[df_lanc["Crédito"] == "Ativo Circulante - Disponível / Banco"]["Valor"].sum()
+variacao_caixa = entradas_caixa - saidas_caixa
+
+dados_dfc = [
+    {"Fluxo de Caixa": "Entradas de Caixa (Débitos em Banco)", "Valor (R$)": entradas_caixa},
+    {"Fluxo de Caixa": "Saídas de Caixa (Créditos em Banco)", "Valor (R$)": -saidas_caixa},
+    {"Fluxo de Caixa": "(=) Variação Líquida de Caixa", "Valor (R$)": variacao_caixa},
+]
+st.dataframe(pd.DataFrame(dados_dfc), use_container_width=True)
+
+# -------------------------------------------------------------
+# 4. DVA (DEMONSTRAÇÃO DO VALOR ADICIONADO)
+# -------------------------------------------------------------
+st.header("4. DVA - Demonstração do Valor Adicionado")
+dados_dva = [
+    {"Especificação": "Receitas (Geração de Valor)", "Valor (R$)": total_receitas},
+    {"Especificação": "Insumos Adquiridos de Terceiros", "Valor (R$)": -total_despesas},
+    {"Especificação": "(=) Valor Adicionado Líquido Produzido", "Valor (R$)": lucro_liquido},
+    {"Especificação": "Distribuição do Valor Adicionado (Lucros Retidos)", "Valor (R$)": lucro_liquido},
+]
+st.dataframe(pd.DataFrame(dados_dva), use_container_width=True)
+
+# -------------------------------------------------------------
+# 5. DMPL (DEMONSTRAÇÃO DAS MUTAÇÕES DO PATRIMÔNIO LÍQUIDO)
+# -------------------------------------------------------------
+st.header("5. DMPL - Demonstração das Mutações do Patrimônio Líquido")
+capital_social_inicial = df_lanc[
+    (df_lanc["Crédito"] == "Patrimônio Líquido - Capital Social") & 
+    (df_lanc["Historico"] == "Saldo Inicial")
+]["Valor"].sum()
+
+dados_dmpl = [
+    {
+        "Conta do PL": "Capital Social",
+        "Saldo Inicial (R$)": capital_social_inicial,
+        "Aumentos / Adições (R$)": 0.0,
+        "Resultado do Período (R$)": 0.0,
+        "Saldo Final (R$)": capital_social_inicial
+    },
+    {
+        "Conta do PL": "Lucros Acumulados",
+        "Saldo Inicial (R$)": 0.0,
+        "Aumentos / Adições (R$)": 0.0,
+        "Resultado do Período (R$)": lucro_liquido,
+        "Saldo Final (R$)": lucro_liquido
+    }
+]
+st.dataframe(pd.DataFrame(dados_dmpl), use_container_width=True)
+
+
+# -------------------------------------------------------------
+# 6. LIVRO RAZÃO E LANÇAMENTOS CONTÁBEIS
+# -------------------------------------------------------------
+st.header("6. Livro Razão e Gestão de Lançamentos")
 
 if "editando_idx" not in st.session_state:
   st.session_state.editando_idx = None
