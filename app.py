@@ -51,63 +51,85 @@ st.header("2. Livro Razão e Lançamentos Contábeis")
 
 ARQUIVO_CSV = "razao_analitico_caixa.csv"
 
-# Carregar dados persistentes do ficheiro CSV do servidor
+# Dados iniciais padrão garantindo que os lançamentos de R$ 14 e R$ 10 estejam sempre presentes
+dados_iniciais = [
+    {
+        "Data": "2026-11-01",
+        "Historico": "Saldo Inicial",
+        "Débito": "Ativo Circulante - Disponível / Banco",
+        "Crédito": "Patrimônio Líquido - Capital Social",
+        "Valor": 150000.0,
+    },
+    {
+        "Data": "2026-11-02",
+        "Historico": "Recebimento de Cliente",
+        "Débito": "Ativo Circulante - Disponível / Banco",
+        "Crédito": "Ativo Circulante - Clientes",
+        "Valor": 15000.0,
+    },
+    {
+        "Data": "2026-11-03",
+        "Historico": "Pagamento de Fornecedor",
+        "Débito": "Passivo Circulante - Fornecedores",
+        "Crédito": "Ativo Circulante - Disponível / Banco",
+        "Valor": 8000.0,
+    },
+    {
+        "Data": "2026-11-04",
+        "Historico": "Despesas Administrativas",
+        "Débito": "Resultado - Despesas Administrativas",
+        "Crédito": "Ativo Circulante - Disponível / Banco",
+        "Valor": 2500.0,
+    },
+    {
+        "Data": "2026-11-02",
+        "Historico": "Ref. Comissão 9bet",
+        "Débito": "Ativo Circulante - Disponível / Banco",
+        "Crédito": "Resultado - Receitas Operacionais",
+        "Valor": 14.0,
+    },
+    {
+        "Data": "2026-11-02",
+        "Historico": "Ref. Comissão D16",
+        "Débito": "Ativo Circulante - Disponível / Banco",
+        "Crédito": "Resultado - Receitas Operacionais",
+        "Valor": 10.0,
+    },
+]
+
+# Carregar dados persistentes do ficheiro CSV do servidor ou criar com os dados padrão
 if "df_lancamentos" not in st.session_state:
   if os.path.exists(ARQUIVO_CSV):
     try:
       st.session_state.df_lancamentos = pd.read_csv(ARQUIVO_CSV, sep=";")
+      if st.session_state.df_lancamentos.empty:
+        st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
     except:
-      st.session_state.df_lancamentos = pd.DataFrame(
-          columns=["Data", "Historico", "Débito", "Crédito", "Valor"]
-      )
+      st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
   else:
-    st.session_state.df_lancamentos = pd.DataFrame(
-        columns=["Data", "Historico", "Débito", "Crédito", "Valor"]
+    st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
+    st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
+
+st.subheader("Registo de Movimentos e Gestão por Linha")
+
+# Exibir os lançamentos linha a linha com um botão de exclusão dedicado ao lado
+for idx, row in st.session_state.df_lancamentos.iterrows():
+  col_info, col_btn = st.columns([5, 1])
+  with col_info:
+    st.markdown(
+        f"**[{idx}] Data:** {row['Data']} | **Hist:** {row['Historico']} |"
+        f" **Débito:** {row['Débito']} | **Crédito:** {row['Crédito']} |"
+        f" **Valor:** R$ {row['Valor']:.2f}"
     )
-
-st.subheader("Registo de Movimentos e Gestão de Lançamentos")
-
-# Exibir tabela para visualização limpa
-st.dataframe(st.session_state.df_lancamentos, use_container_width=True)
-
-# Secção Dedicada para Exclusão de Lançamentos de forma Segura
-if not st.session_state.df_lancamentos.empty:
-  st.markdown("### 🗑️ Excluir Lançamento Incorreto")
-  col_excluir_1, col_excluir_2 = st.columns([3, 1])
-
-  with col_excluir_1:
-    # Criar uma lista descritiva de cada linha para o contador selecionar facilmente
-    opcoes_linhas = []
-    for idx, row in st.session_state.df_lancamentos.iterrows():
-      desc = f"[{idx}] Data: {row['Data']} | Histórico: {row['Historico']} | Valor: R$ {row['Valor']}"
-      opcoes_linhas.append((idx, desc))
-
-    linha_selecionada_desc = st.selectbox(
-        "Selecione o lançamento que deseja excluir:",
-        options=[item[1] for item in opcoes_linhas],
-    )
-
-    # Descobrir o índice real da linha selecionada
-    idx_para_excluir = None
-    for item in opcoes_linhas:
-      if item[1] == linha_selecionada_desc:
-        idx_para_excluir = item[0]
-
-  with col_excluir_2:
-    st.write("")  # Espaçamento vertical para alinhar com o selectbox
-    st.write("")
-    if st.button("Excluir Registo"):
-      if idx_para_excluir is not None:
-        st.session_state.df_lancamentos = (
-            st.session_state.df_lancamentos.drop(idx_para_excluir)
-            .reset_index(drop=True)
-        )
-        # Salvar imediatamente a alteração no servidor
-        st.session_state.df_lancamentos.to_csv(
-            ARQUIVO_CSV, index=False, sep=";"
-        )
-        st.success("Lançamento excluído com sucesso! 🚀")
-        st.rerun()
+  with col_btn:
+    if st.button("🗑️ Excluir", key=f"btn_excluir_{idx}"):
+      st.session_state.df_lancamentos = (
+          st.session_state.df_lancamentos.drop(idx).reset_index(drop=True)
+      )
+      st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
+      st.success(f"Lançamento {idx} excluído com sucesso!")
+      st.rerun()
+  st.markdown("---")
 
 st.subheader("Novo Lançamento (Partidas Dobradas - Débito e Crédito)")
 with st.form("form_partidas_dobradas", clear_on_submit=True):
@@ -117,7 +139,7 @@ with st.form("form_partidas_dobradas", clear_on_submit=True):
     conta_debito = st.selectbox("Conta a DEBITAR", lista_contas)
   with col2:
     valor_mov = st.number_input(
-        "Valor (R$)", min_value=0.0, format="%.2f", step=100.0
+        "Valor (R$)", min_value=0.0, format="%.2f", step=10.0
     )
     conta_credito = st.selectbox("Conta a CREDITAR", lista_contas)
 
@@ -146,7 +168,6 @@ with st.form("form_partidas_dobradas", clear_on_submit=True):
       st.session_state.df_lancamentos = pd.concat(
           [st.session_state.df_lancamentos, novo_registo], ignore_index=True
       )
-      # Gravação automática imediata no ficheiro do servidor
       st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
       st.success("Lançamento efetuado e gravado com sucesso! 🚀")
       st.rerun()
