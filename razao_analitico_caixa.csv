@@ -1,0 +1,5 @@
+Data;Historico;Tipo;Valor
+2026-11-01;Saldo Inicial;Entrada;150000.00
+2026-11-02;Recebimento de Cliente;Entrada;15000.00
+2026-11-03;Pagamento de Fornecedor;Saida;8000.00
+2026-11-04;Despesas Administrativas;Saida;2500.00
