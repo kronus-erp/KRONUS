@@ -11,17 +11,107 @@ st.markdown(
     "Módulo Financeiro e Contábil em Nuvem | *Utilizador: Contador*"
 )
 
-# Criar Abas Principais para organizar o ERP
-aba_contabilidade, aba_empresa = st.tabs([
-    "📊 Contabilidade & Demonstrações",
+# Criar Abas Principais (Cadastro da Empresa em primeiro)
+aba_empresa, aba_contabilidade = st.tabs([
     "🏢 Cadastro da Empresa",
+    "📊 Contabilidade & Demonstrações",
 ])
 
+# Ficheiros de Persistência
+ARQUIVO_RAZAO = "razao_analitico_caixa.csv"
+ARQUIVO_EMPRESA = "cadastro_empresa.csv"
+
 # -------------------------------------------------------------------------
-# ABA 1: CONTABILIDADE & DEMONSTRAÇÕES
+# ABA 1: CADASTRO DA EMPRESA
+# -------------------------------------------------------------------------
+with aba_empresa:
+  st.header("🏢 Cadastro e Dados Cadastrais da Empresa")
+  st.markdown(
+      "Gira as informações oficiais da sociedade para emissão de relatórios e"
+      " conformidade legal."
+  )
+
+  dados_empresa_padrao = pd.DataFrame([{
+      "Razao_Social": "KRONUS S.A. - Gestão e Participações",
+      "CNPJ": "00.000.000/0001-00",
+      "Inscricao_Estadual": "Isento",
+      "Regime_Tributario": "Lucro Real",
+      "Endereco": "Curitiba / São José dos Pinhais - PR",
+      "Contador_Responsavel": "Marcelo Denardi da Silva (CRC/PR)",
+      "Email": "contato@contabilions.com.br",
+  }])
+
+  if "df_empresa" not in st.session_state:
+    if os.path.exists(ARQUIVO_EMPRESA):
+      try:
+        st.session_state.df_empresa = pd.read_csv(ARQUIVO_EMPRESA, sep=";")
+      except:
+        st.session_state.df_empresa = dados_empresa_padrao
+    else:
+      st.session_state.df_empresa = dados_empresa_padrao
+      st.session_state.df_empresa.to_csv(ARQUIVO_EMPRESA, index=False, sep=";")
+
+  empresa_atual = st.session_state.df_empresa.iloc[0]
+
+  regimes_disponiveis = ["Lucro Real", "Lucro Presumido", "Simples Nacional"]
+  regime_atual = str(empresa_atual["Regime_Tributario"])
+  idx_regime = (
+      regimes_disponiveis.index(regime_atual)
+      if regime_atual in regimes_disponiveis
+      else 0
+  )
+
+  with st.form("form_cadastro_empresa"):
+    col_c1, col_c2 = st.columns(2)
+    with col_c1:
+      razao_social = st.text_input(
+          "Razão Social", value=str(empresa_atual["Razao_Social"])
+      )
+      cnpj = st.text_input("CNPJ", value=str(empresa_atual["CNPJ"]))
+      inscricao_estadual = st.text_input(
+          "Inscrição Estadual",
+          value=str(empresa_atual["Inscricao_Estadual"]),
+      )
+      regime_tributario = st.selectbox(
+          "Regime Tributário", regimes_disponiveis, index=idx_regime
+      )
+
+    with col_c2:
+      endereco = st.text_input(
+          "Endereço / Sede", value=str(empresa_atual["Endereco"])
+      )
+      contador_resp = st.text_input(
+          "Contador Responsável / CRC",
+          value=str(empresa_atual["Contador_Responsavel"]),
+      )
+      email_empresa = st.text_input(
+          "E-mail Profissional", value=str(empresa_atual["Email"])
+      )
+
+    salvar_empresa = st.form_submit_button("💾 Salvar Dados da Empresa")
+
+    if salvar_empresa:
+      st.session_state.df_empresa = pd.DataFrame([{
+          "Razao_Social": razao_social,
+          "CNPJ": cnpj,
+          "Inscricao_Estadual": inscricao_estadual,
+          "Regime_Tributario": regime_tributario,
+          "Endereco": endereco,
+          "Contador_Responsavel": contador_resp,
+          "Email": email_empresa,
+      }])
+      st.session_state.df_empresa.to_csv(ARQUIVO_EMPRESA, index=False, sep=";")
+      st.success("Dados cadastrais da empresa salvos com sucesso! 🚀")
+      st.rerun()
+
+  st.markdown("---")
+  st.subheader("📋 Resumo do Cadastro Atual")
+  st.dataframe(st.session_state.df_empresa, use_container_width=True)
+
+# -------------------------------------------------------------------------
+# ABA 2: CONTABILIDADE & DEMONSTRAÇÕES
 # -------------------------------------------------------------------------
 with aba_contabilidade:
-  # Lista de Contas para Partidas Dobradas
   lista_contas = [
       "Ativo Circulante - Disponível / Banco",
       "Ativo Circulante - Clientes",
@@ -33,8 +123,6 @@ with aba_contabilidade:
       "Resultado - Receitas Operacionais",
       "Resultado - Despesas Administrativas",
   ]
-
-  ARQUIVO_CSV = "razao_analitico_caixa.csv"
 
   dados_iniciais = [
       {
@@ -81,22 +169,25 @@ with aba_contabilidade:
       },
   ]
 
-  # Carregar lançamentos de forma limpa e segura
+  # Gestão de Estado dos Lançamentos
   if "df_lancamentos" not in st.session_state:
-    if os.path.exists(ARQUIVO_CSV):
-      df_lido = pd.read_csv(ARQUIVO_CSV, sep=";")
-      if "Débito" not in df_lido.columns or "Crédito" not in df_lido.columns:
+    if os.path.exists(ARQUIVO_RAZAO):
+      try:
+        df_lido = pd.read_csv(ARQUIVO_RAZAO, sep=";")
+        if "Débito" not in df_lido.columns or "Crédito" not in df_lido.columns:
+          st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
+          st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
+        else:
+          st.session_state.df_lancamentos = df_lido
+      except:
         st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
-        st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
-      else:
-        st.session_state.df_lancamentos = df_lido
     else:
       st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
-      st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
+      st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
 
   df_lanc = st.session_state.df_lancamentos
 
-  # 1. Balanço Patrimonial Dinâmico
+  # 1. Balanço Patrimonial
   st.header("1. Balanço Patrimonial (Calculado em Tempo Real)")
   contas_patrimoniais = [
       ("Ativo Circulante", "Disponível / Banco"),
@@ -118,11 +209,7 @@ with aba_contabilidade:
     deb = df_lanc[df_lanc["Débito"] == conta_completa]["Valor"].sum()
     cred = df_lanc[df_lanc["Crédito"] == conta_completa]["Valor"].sum()
 
-    if grupo.startswith("Ativo"):
-      saldo = deb - cred
-    else:
-      saldo = cred - deb
-
+    saldo = (deb - cred) if grupo.startswith("Ativo") else (cred - deb)
     if nome_conta == "Lucros Acumulados":
       saldo += lucro_liquido
 
@@ -187,8 +274,13 @@ with aba_contabilidade:
   ]
   st.dataframe(pd.DataFrame(dados_dmpl), use_container_width=True)
 
-  # 6. Livro Razão e Gestão de Lançamentos
-  st.header("6. Livro Razão e Gestão de Lançamentos")
+  # 6. Livro Diário (Registo Cronológico Oficial)
+  st.header("6. Livro Diário (Registo Cronológico)")
+  st.markdown("Registo oficial por ordem de data com as respetivas partidas dobradas.")
+  st.dataframe(df_lanc, use_container_width=True)
+
+  # 7. Livro Razão e Gestão de Lançamentos
+  st.header("7. Livro Razão e Gestão de Lançamentos")
 
   if "editando_idx" not in st.session_state:
     st.session_state.editando_idx = None
@@ -214,7 +306,7 @@ with aba_contabilidade:
         st.session_state.df_lancamentos = (
             st.session_state.df_lancamentos.drop(idx).reset_index(drop=True)
         )
-        st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
+        st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
         st.success(f"Lançamento {idx} excluído com sucesso!")
         st.rerun()
     st.markdown("---")
@@ -259,7 +351,7 @@ with aba_contabilidade:
             st.session_state.df_lancamentos.loc[idx_edit, "Crédito"] = novo_credito
             st.session_state.df_lancamentos.loc[idx_edit, "Valor"] = novo_valor
 
-            st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
+            st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
             st.session_state.editando_idx = None
             st.success("Lançamento atualizado e gravado com sucesso! 🚀")
             st.rerun()
@@ -306,94 +398,7 @@ with aba_contabilidade:
             [st.session_state.df_lancamentos, novo_registo], ignore_index=True
         )
         st.session_state.df_lancamentos.to_csv(
-            ARQUIVO_CSV, index=False, sep=";"
+            ARQUIVO_RAZAO, index=False, sep=";"
         )
         st.success("Lançamento efetuado e gravado com sucesso! 🚀")
         st.rerun()
-
-# -------------------------------------------------------------------------
-# ABA 2: CADASTRO DA EMPRESA
-# -------------------------------------------------------------------------
-with aba_empresa:
-  st.header("🏢 Cadastro e Dados Cadastrais da Empresa")
-  st.markdown(
-      "Gira as informações oficiais da sociedade para emissão de relatórios e"
-      " conformidade legal."
-  )
-
-  ARQUIVO_EMPRESA = "cadastro_empresa.csv"
-
-  dados_empresa_padrao = pd.DataFrame([{
-      "Razao_Social": "KRONUS S.A. - Gestão e Participações",
-      "CNPJ": "00.000.000/0001-00",
-      "Inscricao_Estadual": "Isento",
-      "Regime_Tributario": "Lucro Real",
-      "Endereco": "Curitiba / São José dos Pinhais - PR",
-      "Contador_Responsavel": "Marcelo Denardi da Silva (CRC/PR)",
-      "Email": "contato@contabilions.com.br",
-  }])
-
-  if "df_empresa" not in st.session_state:
-    if os.path.exists(ARQUIVO_EMPRESA):
-      df_emp_lido = pd.read_csv(ARQUIVO_EMPRESA, sep=";")
-      st.session_state.df_empresa = df_emp_lido
-    else:
-      st.session_state.df_empresa = dados_empresa_padrao
-      st.session_state.df_empresa.to_csv(ARQUIVO_EMPRESA, index=False, sep=";")
-
-  empresa_atual = st.session_state.df_empresa.iloc[0]
-
-  regimes_disponiveis = ["Lucro Real", "Lucro Presumido", "Simples Nacional"]
-  regime_atual = str(empresa_atual["Regime_Tributario"])
-  idx_regime = (
-      regimes_disponiveis.index(regime_atual)
-      if regime_atual in regimes_disponiveis
-      else 0
-  )
-
-  with st.form("form_cadastro_empresa"):
-    col_c1, col_c2 = st.columns(2)
-    with col_c1:
-      razao_social = st.text_input(
-          "Razão Social", value=str(empresa_atual["Razao_Social"])
-      )
-      cnpj = st.text_input("CNPJ", value=str(empresa_atual["CNPJ"]))
-      inscricao_estadual = st.text_input(
-          "Inscrição Estadual",
-          value=str(empresa_atual["Inscricao_Estadual"]),
-      )
-      regime_tributario = st.selectbox(
-          "Regime Tributário", regimes_disponiveis, index=idx_regime
-      )
-
-    with col_c2:
-      endereco = st.text_input(
-          "Endereço / Sede", value=str(empresa_atual["Endereco"])
-      )
-      contador_resp = st.text_input(
-          "Contador Responsável / CRC",
-          value=str(empresa_atual["Contador_Responsavel"]),
-      )
-      email_empresa = st.text_input(
-          "E-mail Profissional", value=str(empresa_atual["Email"])
-      )
-
-    salvar_empresa = st.form_submit_button("💾 Salvar Dados da Empresa")
-
-    if salvar_empresa:
-      st.session_state.df_empresa = pd.DataFrame([{
-          "Razao_Social": razao_social,
-          "CNPJ": cnpj,
-          "Inscricao_Estadual": inscricao_estadual,
-          "Regime_Tributario": regime_tributario,
-          "Endereco": endereco,
-          "Contador_Responsavel": contador_resp,
-          "Email": email_empresa,
-      }])
-      st.session_state.df_empresa.to_csv(ARQUIVO_EMPRESA, index=False, sep=";")
-      st.success("Dados cadastrais da empresa salvos com sucesso! 🚀")
-      st.rerun()
-
-  st.markdown("---")
-  st.subheader("📋 Resumo do Cadastro Atual")
-  st.dataframe(st.session_state.df_empresa, use_container_width=True)
