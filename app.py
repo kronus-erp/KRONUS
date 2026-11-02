@@ -146,17 +146,24 @@ for grupo, contas in plano_de_contas.items():
   for c in contas:
     opcoes_selectbox.append(c)
 
-dados_iniciais = [
+lancamentos_iniciais = [
     {
-        "Data": "2026-11-01",
-        "Historico": "Saldo Inicial Capital",
-        "Débito": "1.1.1.02 - Bancos Conta Movimento",
-        "Crédito": "2.3.1.01 - Capital Subscrito / Realizado",
-        "Valor": 00.0,
+        "id": 1,
+        "historico": "Subscrição de Capital Social Inicial",
+        "conta_debito": "2.3.1.02 - Capital Subscrito a Realizar",
+        "conta_credito": "2.3.1.01 - Capital Subscrito / Realizado",
+        "valor": 1500.00,
+    },
+    {
+        "id": 2,
+        "historico": "Integralização de Capital Social em Bancos/Caixa",
+        "conta_debito": "1.1.1.02 - Bancos Conta Movimento",  # Ou 1.1.1.01 - Caixa Geral
+        "conta_credito": "2.3.1.02 - Capital Subscrito a Realizar",
+        "valor": 1500.00,
     },
     {
         "Data": "2026-11-02",
-        "Historico": "Recebimento de Prestação de Serviços",
+        "Historico": "Recebimento de Prestação de Serviços
         "Débito": "1.1.1.02 - Bancos Conta Movimento",
         "Crédito": "4.1.2.01 - Receita de Prestação de Serviços (Serviços)",
         "Valor": 24.0,
