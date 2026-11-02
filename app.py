@@ -210,7 +210,7 @@ total_despesas = df_lanc[
 lucro_liquido = lucro_bruto - total_despesas
 
 
-# Função auxiliar de cálculo global (evita erros de endentação)
+# Função auxiliar de cálculo global
 def calcular_secao(nome_grupo, tipo="ativo"):
   contas_grupo = plano_de_contas.get(nome_grupo, [])
   dados = []
@@ -227,7 +227,7 @@ def calcular_secao(nome_grupo, tipo="ativo"):
 
 
 # -------------------------------------------------------------------------
-# ABA 1: CADASTRO DA EMPRESA (COM SUPORTE A MÚLTIPLAS EMPRESAS)
+# ABA 1: CADASTRO DA EMPRESA
 # -------------------------------------------------------------------------
 with aba_empresa:
   st.header("Cadastro e Dados Cadastrais da Empresa")
@@ -374,7 +374,6 @@ with aba_empresa:
 with aba_lancamentos:
   st.header("Módulo de Lançamentos (Partidas Dobradas)")
 
-  # Expansor para adicionar nova conta dinâmica ao plano de contas
   with st.expander("Adicionar Nova Conta Analítica ao Plano de Contas"):
     with st.form("form_nova_conta"):
       grupo_escolhido = st.selectbox(
@@ -509,10 +508,10 @@ with aba_lancamentos:
 # -------------------------------------------------------------------------
 with aba_demonstracoes:
   st.header("Demonstrações Contábeis Oficiais")
-  with aba_demonstracoes:
-  st.header("Demonstrações Contábeis Oficiais")
-  st.markdown(
-      "Relatórios financeiros gerados em conformidade com a legislação e ITG"
-      " 1000."
-  )
+  st.markdown("Relatórios financeiros gerados em conformidade com a legislação e ITG 1000.")
 
+  # 1. Balanço Patrimonial
+  st.subheader("1. Balanço Patrimonial")
+  st.markdown("##### ATIVO")
+
+ 
