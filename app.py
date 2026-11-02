@@ -96,7 +96,7 @@ dados_iniciais = [
     },
 ]
 
-# Carregar dados e garantir compatibilidade de colunas
+# Carregar dados e garantir compatibilidade
 if "df_lancamentos" not in st.session_state:
   if os.path.exists(ARQUIVO_CSV):
     try:
@@ -112,21 +112,29 @@ if "df_lancamentos" not in st.session_state:
     st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
     st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
 
+# Controlo de edição na sessão
+if "editando_idx" not in st.session_state:
+  st.session_state.editando_idx = None
+
 st.subheader("Registo de Movimentos e Gestão por Linha")
 
-# Exibir os lançamentos linha a linha com o botão de excluir dedicado
+# Exibir os lançamentos com botões de Editar e Excluir lado a lado
 for idx, row in st.session_state.df_lancamentos.iterrows():
-  col_info, col_btn = st.columns([5, 1])
+  col_info, col_edit, col_del = st.columns([4, 1, 1])
   with col_info:
     deb = row.get("Débito", "N/A")
     cred = row.get("Crédito", "N/A")
     st.markdown(
-        f"**[{idx}] Data:** {row['Data']} | **Hist:** {row['Historico']} |"
-        f" **Débito:** {deb} | **Crédito:** {cred} | **Valor:** R$"
-        f" {row['Valor']:.2f}"
+        f"**[{idx}] {row['Data']}** | {row['Historico']} | **D:** {deb} |"
+        f" **C:** {cred} | **R$ {row['Valor']:.2f}**"
     )
-  with col_btn:
-    if st.button("🗑️ Excluir", key=f"btn_excluir_{idx}"):
+  with col_edit:
+    if st.button("✏️ Editar", key=f"btn_edit_{idx}"):
+      st.session_state.editando_idx = idx
+  with col_del:
+    if st.button("🗑️ Excluir", key=f"btn_del_{idx}"):
+      if st.session_state.editando_idx == idx:
+        st.session_state.editando_idx = None
       st.session_state.df_lancamentos = (
           st.session_state.df_lancamentos.drop(idx).reset_index(drop=True)
       )
@@ -134,6 +142,60 @@ for idx, row in st.session_state.df_lancamentos.iterrows():
       st.success(f"Lançamento {idx} excluído com sucesso!")
       st.rerun()
   st.markdown("---")
+
+# Se o utilizador clicou em editar numa linha específica, abre o painel de edição
+if st.session_state.editando_idx is not None:
+  idx_edit = st.session_state.editando_idx
+  if idx_edit in st.session_state.df_lancamentos.index:
+    row_atual = st.session_state.df_lancamentos.loc[idx_edit]
+
+    st.markdown(f"### ✏️ A Editar o Lançamento [{idx_edit}]")
+    with st.form(f"form_editar_{idx_edit}"):
+      col_e1, col_e2 = st.columns(2)
+      with col_e1:
+        nova_data = st.text_input("Data (AAAA-MM-DD)", value=str(row_atual["Data"]))
+        
+        # Obter índice seguro para o selectbox de Débito
+        deb_atual = str(row_atual.get("Débito", lista_contas[0]))
+        idx_deb = lista_contas.index(deb_atual) if deb_atual in lista_contas else 0
+        novo_debito = st.selectbox("Conta a DEBITAR", lista_contas, index=idx_deb)
+        
+      with col_e2:
+        novo_valor = st.number_input(
+            "Valor (R$)", min_value=0.0, value=float(row_atual["Valor"]), format="%.2f", step=10.0
+        )
+        
+        # Obter índice seguro para o selectbox de Crédito
+        cred_atual = str(row_atual.get("Crédito", lista_contas[0]))
+        idx_cred = lista_contas.index(cred_atual) if cred_atual in lista_contas else 0
+        novo_credito = st.selectbox("Conta a CREDITAR", lista_contas, index=idx_cred)
+
+      novo_hist = st.text_input("Histórico / Descrição", value=str(row_atual["Historico"]))
+
+      col_salvar, col_cancelar = st.columns(2)
+      with col_salvar:
+        salvar_edicao = st.form_submit_button("💾 Guardar Alterações")
+      with col_cancelar:
+        cancelar_edicao = st.form_submit_button("❌ Cancelar")
+
+      if salvar_edicao:
+        if novo_debito == novo_credito:
+          st.error("A conta a debitar não pode ser igual à conta a creditar!")
+        else:
+          st.session_state.df_lancamentos.loc[idx_edit, "Data"] = nova_data
+          st.session_state.df_lancamentos.loc[idx_edit, "Historico"] = novo_hist
+          st.session_state.df_lancamentos.loc[idx_edit, "Débito"] = novo_debito
+          st.session_state.df_lancamentos.loc[idx_edit, "Crédito"] = novo_credito
+          st.session_state.df_lancamentos.loc[idx_edit, "Valor"] = novo_valor
+
+          st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
+          st.session_state.editando_idx = None
+          st.success("Lançamento atualizado e gravado com sucesso! 🚀")
+          st.rerun()
+
+      if cancelar_edicao:
+        st.session_state.editando_idx = None
+        st.rerun()
 
 st.subheader("Novo Lançamento (Partidas Dobradas - Débito e Crédito)")
 with st.form("form_partidas_dobradas", clear_on_submit=True):
