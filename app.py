@@ -107,6 +107,7 @@ plano_inicial_dict = {
         "5.2.2.02 - Energia Elétrica, Água, Internet e Telefone",
         "5.2.2.03 - Honorários Contábeis",
         "5.2.2.04 - Material de Escritório",
+        "5.2.2.05 - Despesas com Alimentação",
         "5.2.3.01 - Simples Nacional (DAS) - Despesa Tributária",
         "5.2.3.02 - Taxas e Licenças Diversas",
     ],
@@ -210,19 +211,22 @@ total_despesas = df_lanc[
 lucro_liquido = lucro_bruto - total_despesas
 
 
-# Função auxiliar de cálculo global
+# Função auxiliar de cálculo global blindada contra erros
 def calcular_secao(nome_grupo, tipo="ativo"):
   contas_grupo = plano_de_contas.get(nome_grupo, [])
   dados = []
   tot = 0.0
   for conta in contas_grupo:
-    deb = df_lanc[df_lanc["Débito"] == conta]["Valor"].sum()
-    cred = df_lanc[df_lanc["Crédito"] == conta]["Valor"].sum()
-    saldo = (deb - cred) if tipo == "ativo" else (cred - deb)
-    if "Lucros Acumulados" in conta:
-      saldo += lucro_liquido
-    dados.append({"Conta": conta, "Saldo (R$)": saldo})
-    tot += saldo
+    try:
+      deb = df_lanc[df_lanc["Débito"] == conta]["Valor"].sum()
+      cred = df_lanc[df_lanc["Crédito"] == conta]["Valor"].sum()
+      saldo = (deb - cred) if tipo == "ativo" else (cred - deb)
+      if "Lucros Acumulados" in conta:
+        saldo += lucro_liquido
+      dados.append({"Conta": conta, "Saldo (R$)": saldo})
+      tot += saldo
+    except Exception:
+      dados.append({"Conta": conta, "Saldo (R$)": 0.0})
   return pd.DataFrame(dados), tot
 
 
@@ -508,10 +512,4 @@ with aba_lancamentos:
 # -------------------------------------------------------------------------
 with aba_demonstracoes:
   st.header("Demonstrações Contábeis Oficiais")
-  st.markdown("Relatórios financeiros gerados em conformidade com a legislação e ITG 1000.")
-
-  # 1. Balanço Patrimonial
-  st.subheader("1. Balanço Patrimonial")
-  st.markdown("##### ATIVO")
-
- 
+  st.markdown("Relatóri
