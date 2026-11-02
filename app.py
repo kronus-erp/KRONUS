@@ -152,7 +152,7 @@ dados_iniciais = [
         "Historico": "Saldo Inicial Capital",
         "Débito": "1.1.1.02 - Bancos Conta Movimento",
         "Crédito": "2.3.1.01 - Capital Subscrito / Realizado",
-        "Valor": 150000.0,
+        "Valor": 00.0,
     },
     {
         "Data": "2026-11-02",
