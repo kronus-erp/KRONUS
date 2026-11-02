@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import streamlit as st
 
@@ -48,12 +49,18 @@ lista_contas = [
 # 2. Livro Razão e Lançamentos com Partidas Dobradas
 st.header("2. Livro Razão e Lançamentos Contábeis")
 
+ARQUIVO_CSV = "razao_analitico_caixa.csv"
+
+# Carregar dados persistentes do ficheiro CSV do servidor
 if "df_lancamentos" not in st.session_state:
-  try:
-    st.session_state.df_lancamentos = pd.read_csv(
-        "razao_analitico_caixa.csv", sep=";"
-    )
-  except:
+  if os.path.exists(ARQUIVO_CSV):
+    try:
+      st.session_state.df_lancamentos = pd.read_csv(ARQUIVO_CSV, sep=";")
+    except:
+      st.session_state.df_lancamentos = pd.DataFrame(
+          columns=["Data", "Historico", "Débito", "Crédito", "Valor"]
+      )
+  else:
     st.session_state.df_lancamentos = pd.DataFrame(
         columns=["Data", "Historico", "Débito", "Crédito", "Valor"]
     )
@@ -69,16 +76,11 @@ df_editado = st.data_editor(
     num_rows="dynamic",
     key="editor_movimentos",
 )
-st.session_state.df_lancamentos = df_editado
 
-# Botão de Exportação para salvar os dados no telemóvel
-csv_dados = st.session_state.df_lancamentos.to_csv(index=False, sep=";")
-st.download_button(
-    label="📥 Descarregar Lançamentos (Backup / CSV)",
-    data=csv_dados,
-    file_name="razao_analitico_kronus.csv",
-    mime="text/csv",
-)
+# Se houver alterações na tabela (edição ou exclusão), atualiza e guarda automaticamente no servidor
+if not df_editado.equals(st.session_state.df_lancamentos):
+  st.session_state.df_lancamentos = df_editado
+  st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
 
 st.subheader("Novo Lançamento (Partidas Dobradas - Débito e Crédito)")
 with st.form("form_partidas_dobradas", clear_on_submit=True):
@@ -117,5 +119,7 @@ with st.form("form_partidas_dobradas", clear_on_submit=True):
       st.session_state.df_lancamentos = pd.concat(
           [st.session_state.df_lancamentos, novo_registo], ignore_index=True
       )
-      st.success("Lançamento efetuado com sucesso! 🚀")
+      # Gravação automática imediata no ficheiro do servidor
+      st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
+      st.success("Lançamento efetuado e gravado com sucesso! 🚀")
       st.rerun()
