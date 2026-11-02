@@ -88,31 +88,4 @@ with aba_contabilidade:
         df_lido = pd.read_csv(ARQUIVO_CSV, sep=";")
         if "Débito" not in df_lido.columns or "Crédito" not in df_lido.columns:
           st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
-          st.session_state.df_lancamentos.to_csv(
-              ARQUIVO_CSV, index=False, sep=";"
-          )
-        else:
-          st.session_state.df_lancamentos = df_lido
-      except:
-        st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
-    else:
-      st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
-      st.session_state.df_lancamentos.to_csv(ARQUIVO_CSV, index=False, sep=";")
-
-  df_lanc = st.session_state.df_lancamentos
-
-  # 1. Balanço Patrimonial Dinâmico
-  st.header("1. Balanço Patrimonial (Calculado em Tempo Real)")
-  contas_patrimoniais = [
-      ("Ativo Circulante", "Disponível / Banco"),
-      ("Ativo Circulante", "Clientes"),
-      ("Ativo Não Circulante", "Imobilizado"),
-      ("Passivo Circulante", "Fornecedores"),
-      ("Passivo Circulante", "Obrigações Trabalhistas"),
-      ("Patrimônio Líquido", "Capital Social"),
-      ("Patrimônio Líquido", "Lucros Acumulados"),
-  ]
-
-  total_receitas = df_lanc[
-      df_lanc["Crédito"] == "Resultado - Receitas
-    
+          st.session_state.df_lanc
