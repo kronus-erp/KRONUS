@@ -196,20 +196,130 @@ with aba_contabilidade:
   df_lanc = st.session_state.df_lancamentos
 
   # Apurações
-  total_receitas = df_lanc[df_lanc["Crédito"].str.startswith("4.1")]["Valor"].sum()
-  deducoes_receita = df_lanc[df_lanc["Débito"].str.startswith("4.2")]["Valor"].sum()
+  total_receitas = df_lanc[df_lanc["Crédito"].str.startswith("4.1", na=False)]["Valor"].sum()
+  deducoes_receita = df_lanc[df_lanc["Débito"].str.startswith("4.2", na=False)]["Valor"].sum()
   receita_liquida = total_receitas - deducoes_receita
 
-  total_custos = df_lanc[df_lanc["Débito"].str.startswith("5.1")]["Valor"].sum()
+  total_custos = df_lanc[df_lanc["Débito"].str.startswith("5.1", na=False)]["Valor"].sum()
   lucro_bruto = receita_liquida - total_custos
 
-  total_despesas = df_lanc[df_lanc["Débito"].str.startswith("5.2")]["Valor"].sum()
+  total_despesas = df_lanc[df_lanc["Débito"].str.startswith("5.2", na=False)]["Valor"].sum()
   lucro_liquido = lucro_bruto - total_despesas
 
   # -------------------------------------------------------------------------
-  # 1. BALANÇO PATRIMONIAL POR SEÇÕES
+  # GESTÃO DE LANÇAMENTOS (COLOCADO EM DESTAQUE NO TOPO DA ABA)
   # -------------------------------------------------------------------------
-  st.header("1. Balanço Patrimonial")
+  st.header("1. Módulo de Lançamentos (Partidas Dobradas)")
+  st.markdown("Registe novas operações contábeis com débito e crédito cruzados.")
+
+  if "editando_idx" not in st.session_state:
+    st.session_state.editando_idx = None
+
+  with st.form("form_partidas_dobradas", clear_on_submit=True):
+    col1, col2 = st.columns(2)
+    with col1:
+      data_lanc = st.date_input("Data do Lançamento")
+      conta_debito = st.selectbox("Conta a DEBITAR", lista_contas)
+    with col2:
+      valor_mov = st.number_input("Valor (R$)", min_value=0.0, format="%.2f", step=10.0)
+      conta_credito = st.selectbox("Conta a CREDITAR", lista_contas)
+
+    historico = st.text_input("Histórico / Descrição", placeholder="Ex: Recebimento de cliente ou pagamento despesa")
+
+    submitted = st.form_submit_button("Lançar Partida Dobrada")
+    if submitted:
+      if conta_debito == conta_credito:
+        st.error("A conta a debitar não pode ser igual à conta a creditar numa partida dobrada!")
+      else:
+        novo_registo = pd.DataFrame([{
+            "Data": str(data_lanc),
+            "Historico": historico,
+            "Débito": conta_debito,
+            "Crédito": conta_credito,
+            "Valor": valor_mov,
+        }])
+        st.session_state.df_lancamentos = pd.concat([st.session_state.df_lancamentos, novo_registo], ignore_index=True)
+        st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
+        st.success("Lançamento efetuado e gravado com sucesso! 🚀")
+        st.rerun()
+
+  st.markdown("---")
+  st.subheader("📋 Gestão e Listagem de Lançamentos")
+
+  for idx, row in st.session_state.df_lancamentos.iterrows():
+    col_info, col_edit, col_del = st.columns([4, 1, 1])
+    with col_info:
+      deb = row.get("Débito", "N/A")
+      cred = row.get("Crédito", "N/A")
+      st.markdown(f"**[{idx}] {row['Data']}** | {row['Historico']} | **D:** {deb} | **C:** {cred} | **R$ {row['Valor']:.2f}**")
+    with col_edit:
+      if st.button("✏️", key=f"btn_edit_{idx}"):
+        st.session_state.editando_idx = idx
+    with col_del:
+      if st.button("🗑️", key=f"btn_del_{idx}"):
+        if st.session_state.editando_idx == idx:
+          st.session_state.editando_idx = None
+        st.session_state.df_lancamentos = st.session_state.df_lancamentos.drop(idx).reset_index(drop=True)
+        st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
+        st.success(f"Lançamento {idx} excluído!")
+        st.rerun()
+
+  # Painel de Edição
+  if st.session_state.editando_idx is not None:
+    idx_edit = st.session_state.editando_idx
+    if idx_edit in st.session_state.df_lancamentos.index:
+      row_atual = st.session_state.df_lancamentos.loc[idx_edit]
+      st.markdown(f"### ✏️ A Editar o Lançamento [{idx_edit}]")
+      with st.form(f"form_editar_{idx_edit}"):
+        col_e1, col_e2 = st.columns(2)
+        with col_e1:
+          nova_data = st.text_input("Data (AAAA-MM-DD)", value=str(row_atual["Data"]))
+          deb_atual = str(row_atual.get("Débito", lista_contas[0]))
+          idx_deb = lista_contas.index(deb_atual) if deb_atual in lista_contas else 0
+          novo_debito = st.selectbox("Conta a DEBITAR", lista_contas, index=idx_deb)
+        with col_e2:
+          novo_valor = st.number_input("Valor (R$)", min_value=0.0, value=float(row_atual["Valor"]), format="%.2f", step=10.0)
+          cred_atual = str(row_atual.get("Crédito", lista_contas[0]))
+          idx_cred = lista_contas.index(cred_atual) if cred_atual in lista_contas else 0
+          novo_credito = st.selectbox("Conta a CREDITAR", lista_contas, index=idx_cred)
+
+        novo_hist = st.text_input("Histórico / Descrição", value=str(row_atual["Historico"]))
+        
+        col_salv, col_canc = st.columns(2)
+        with col_salv:
+          salvar_edicao = st.form_submit_button("💾 Guardar")
+        with col_canc:
+          cancelar_edicao = st.form_submit_button("❌ Cancelar")
+
+        if salvar_edicao:
+          if novo_debito == novo_credito:
+            st.error("Débito e Crédito não podem ser iguais!")
+          else:
+            st.session_state.df_lancamentos.loc[idx_edit, "Data"] = nova_data
+            st.session_state.df_lancamentos.loc[idx_edit, "Historico"] = novo_hist
+            st.session_state.df_lancamentos.loc[idx_edit, "Débito"] = novo_debito
+            st.session_state.df_lancamentos.loc[idx_edit, "Crédito"] = novo_credito
+            st.session_state.df_lancamentos.loc[idx_edit, "Valor"] = novo_valor
+            st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
+            st.session_state.editando_idx = None
+            st.success("Atualizado com sucesso! 🚀")
+            st.rerun()
+        if cancelar_edicao:
+          st.session_state.editando_idx = None
+          st.rerun()
+
+  st.markdown("---")
+
+  # -------------------------------------------------------------------------
+  # 2. LIVRO DIÁRIO E LIVRO RAZÃO
+  # -------------------------------------------------------------------------
+  st.header("2. Livro Diário (Registo Cronológico)")
+  st.dataframe(df_lanc, use_container_width=True)
+
+  # -------------------------------------------------------------------------
+  # 3. BALANÇO PATRIMONIAL POR SEÇÕES
+  # -------------------------------------------------------------------------
+  st.header("3. Balanço Patrimonial")
 
   def calcular_secao(contas_lista, tipo="ativo"):
     dados = []
@@ -217,18 +327,11 @@ with aba_contabilidade:
     for conta in contas_lista:
       deb = df_lanc[df_lanc["Débito"] == conta]["Valor"].sum()
       cred = df_lanc[df_lanc["Crédito"] == conta]["Valor"].sum()
-      
-      if tipo == "ativo":
-        saldo = deb - cred
-      else: # passivo ou pl
-        saldo = cred - deb
-
+      saldo = (deb - cred) if tipo == "ativo" else (cred - deb)
       if "Lucros Acumulados" in conta:
         saldo += lucro_liquido
-
-      if saldo != 0.0 or True: # Mostrar mesmo com saldo zero para visual completo
-        dados.append({"Conta": conta, "Saldo (R$)": saldo})
-        total_secao += saldo
+      dados.append({"Conta": conta, "Saldo (R$)": saldo})
+      total_secao += saldo
     return pd.DataFrame(dados), total_secao
 
   ativo_circulante_contas = [c for c in lista_contas if c.startswith("1.1")]
@@ -267,9 +370,9 @@ with aba_contabilidade:
   st.markdown(f"### 📊 **TOTAL DO PASSIVO + PL: R$ {tot_pc + tot_pnc + tot_pl:.2f}**")
 
   # -------------------------------------------------------------------------
-  # 2. DRE POR SEÇÕES
+  # 4. DRE POR SEÇÕES
   # -------------------------------------------------------------------------
-  st.header("2. DRE - Demonstração do Resultado do Exercício")
+  st.header("4. DRE - Demonstração do Resultado do Exercício")
   
   st.subheader("📈 Receitas Operacionais")
   receitas_contas = [c for c in lista_contas if c.startswith("4.1") or c.startswith("4.2")]
@@ -289,8 +392,8 @@ with aba_contabilidade:
   st.dataframe(df_desp, use_container_width=True)
   st.markdown(f"### 🎯 **Resultado Líquido do Exercício: R$ {lucro_liquido:.2f}**")
 
-  # 3. DFC
-  st.header("3. DFC - Demonstração dos Fluxos de Caixa (Método Direto)")
+  # 5. DFC
+  st.header("5. DFC - Demonstração dos Fluxos de Caixa (Método Direto)")
   entradas_caixa = df_lanc[df_lanc["Débito"].str.contains("Caixa|Bancos", na=False)]["Valor"].sum()
   saidas_caixa = df_lanc[df_lanc["Crédito"].str.contains("Caixa|Bancos", na=False)]["Valor"].sum()
   variacao_caixa = entradas_caixa - saidas_caixa
@@ -302,8 +405,8 @@ with aba_contabilidade:
   ]
   st.dataframe(pd.DataFrame(dados_dfc), use_container_width=True)
 
-  # 4. DVA
-  st.header("4. DVA - Demonstração do Valor Adicionado")
+  # 6. DVA
+  st.header("6. DVA - Demonstração do Valor Adicionado")
   dados_dva = [
       {"Especificação": "Receitas (Geração de Valor)", "Valor (R$)": total_receitas},
       {"Especificação": "Insumos Adquiridos de Terceiros / Despesas", "Valor (R$)": -total_despesas},
@@ -312,8 +415,8 @@ with aba_contabilidade:
   ]
   st.dataframe(pd.DataFrame(dados_dva), use_container_width=True)
 
-  # 5. DMPL
-  st.header("5. DMPL - Demonstração das Mutações do Patrimônio Líquido")
+  # 7. DMPL
+  st.header("7. DMPL - Demonstração das Mutações do Patrimônio Líquido")
   capital_social_inicial = df_lanc[
       (df_lanc["Crédito"].str.startswith("2.3.1"))
       & (df_lanc["Historico"].str.contains("Capital", na=False))
@@ -336,79 +439,3 @@ with aba_contabilidade:
       },
   ]
   st.dataframe(pd.DataFrame(dados_dmpl), use_container_width=True)
-
-  # 6. Livro Diário
-  st.header("6. Livro Diário (Registo Cronológico)")
-  st.dataframe(df_lanc, use_container_width=True)
-
-  # 7. Livro Razão e Gestão de Lançamentos
-  st.header("7. Livro Razão e Gestão de Lançamentos")
-
-  if "editando_idx" not in st.session_state:
-    st.session_state.editando_idx = None
-
-  st.subheader("Registo de Movimentos e Gestão por Linha")
-
-  for idx, row in st.session_state.df_lancamentos.iterrows():
-    col_info, col_edit, col_del = st.columns([4, 1, 1])
-    with col_info:
-      deb = row.get("Débito", "N/A")
-      cred = row.get("Crédito", "N/A")
-      st.markdown(
-          f"**[{idx}] {row['Data']}** | {row['Historico']} | **D:** {deb} |"
-          f" **C:** {cred} | **R$ {row['Valor']:.2f}**"
-      )
-    with col_edit:
-      if st.button("✏️ Editar", key=f"btn_edit_{idx}"):
-        st.session_state.editando_idx = idx
-    with col_del:
-      if st.button("🗑️ Excluir", key=f"btn_del_{idx}"):
-        if st.session_state.editando_idx == idx:
-          st.session_state.editando_idx = None
-        st.session_state.df_lancamentos = (
-            st.session_state.df_lancamentos.drop(idx).reset_index(drop=True)
-        )
-        st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
-        st.success(f"Lançamento {idx} excluído com sucesso!")
-        st.rerun()
-    st.markdown("---")
-
-  # Painel de Edição
-  if st.session_state.editando_idx is not None:
-    idx_edit = st.session_state.editando_idx
-    if idx_edit in st.session_state.df_lancamentos.index:
-      row_atual = st.session_state.df_lancamentos.loc[idx_edit]
-
-      st.markdown(f"### ✏️ A Editar o Lançamento [{idx_edit}]")
-      with st.form(f"form_editar_{idx_edit}"):
-        col_e1, col_e2 = st.columns(2)
-        with col_e1:
-          nova_data = st.text_input("Data (AAAA-MM-DD)", value=str(row_atual["Data"]))
-          deb_atual = str(row_atual.get("Débito", lista_contas[0]))
-          idx_deb = lista_contas.index(deb_atual) if deb_atual in lista_contas else 0
-          novo_debito = st.selectbox("Conta a DEBITAR", lista_contas, index=idx_deb)
-        with col_e2:
-          novo_valor = st.number_input(
-              "Valor (R$)", min_value=0.0, value=float(row_atual["Valor"]), format="%.2f", step=10.0
-          )
-          cred_atual = str(row_atual.get("Crédito", lista_contas[0]))
-          idx_cred = lista_contas.index(cred_atual) if cred_atual in lista_contas else 0
-          novo_credito = st.selectbox("Conta a CREDITAR", lista_contas, index=idx_cred)
-
-        novo_hist = st.text_input("Histórico / Descrição", value=str(row_atual["Historico"]))
-
-        col_salvar, col_cancelar = st.columns(2)
-        with col_salvar:
-          salvar_edicao = st.form_submit_button("💾 Guardar Alterações")
-        with col_cancelar:
-          cancelar_edicao = st.form_submit_button("❌ Cancelar")
-
-        if salvar_edicao:
-          if novo_debito == novo_credito:
-            st.error("A conta a debitar não pode ser igual à conta a creditar!")
-          else:
-            st.session_state.df_lancamentos.loc[idx_edit, "Data"] = nova_data
-            st.session_state.df_lancamentos.loc[idx_edit, "Historico"] = novo_hist
-            st.session_state.df_lancamentos.loc[idx_edit, "Débito"] = novo_debito
-            st.session_state.df_lancamentos.loc[idx_edit, "Crédito"] = novo_credito
-            st.session_state.df_lancamentos.loc
