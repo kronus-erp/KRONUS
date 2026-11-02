@@ -41,16 +41,20 @@ with col_texto:
 
 st.markdown("---")
 
-# ABAS PRINCIPAIS
+# -------------------------------------------------------------------------
+# CRIAÇÃO DAS TRÊS ABAS PRINCIPAIS
+# -------------------------------------------------------------------------
 aba_empresa, aba_lancamentos, aba_demonstracoes = st.tabs([
     "🏢 Cadastro da Empresa",
     "📝 Lançamentos & Diário",
     "📊 Demonstrações Contábeis",
 ])
 
+# Ficheiros de Persistência
 ARQUIVO_RAZAO = "razao_analitico_caixa.csv"
 ARQUIVO_EMPRESA = "cadastro_empresa.csv"
 
+# Plano de Contas Simples Nacional (ITG 1000)
 plano_de_contas = {
     "--- ATIVO CIRCULANTE ---": [
         "1.1.1.01 - Caixa Geral",
@@ -348,68 +352,9 @@ with aba_lancamentos:
           st.session_state.editando_idx = None
           st.rerun()
 
-  st.markdown("---")
-  st.subheader("📖 Livro Diário")
-  st.dataframe(df_lanc, use_container_width=True)
-
 
 # -------------------------------------------------------------------------
-# ABA 3: DEMONSTRAÇÕES CONTÁBEIS
-# -------------------------------------------------------------------------
-with aba_demonstracoes:
-  st.header("📊 Demonstrações Contábeis Oficiais")
-
-  def calcular_secao(nome_grupo, tipo="ativo"):
-    contas_grupo = plano_de_contas[nome_grupo]
-    dados = []
-    tot = 0.0
-    for conta in contas_grupo:
-      deb = df_lanc[df_lanc["Débito"] == conta]["Valor"].sum()
-      cred = df_lanc[df_lanc["Crédito"] == conta]["Valor"].sum()
-      saldo = (deb - cred) if tipo == "ativo" else (cred - deb)
-      if "Lucros Acumulados" in conta:
-        saldo += lucro_liquido
-      dados.append({"Conta": conta, "Saldo (R$)": saldo})
-      tot += saldo
-    return pd.DataFrame(dados), tot
-
-  st.subheader("1. Balanço Patrimonial")
-  st.markdown("##### ATIVO")
-  df_ac, tot_ac = calcular_secao("--- ATIVO CIRCULANTE ---", "ativo")
-  st.dataframe(df_ac, use_container_width=True)
-  st.markdown(f"**Total Ativo Circulante: R$ {tot_ac:.2f}**")
-
-  df_anc, tot_anc = calcular_secao("--- ATIVO NÃO CIRCULANTE ---", "ativo")
-  st.dataframe(df_anc, use_container_width=True)
-  st.markdown(f"**Total Ativo Não Circulante: R$ {tot_anc:.2f}**")
-  st.markdown(f"### **TOTAL DO ATIVO: R$ {tot_ac + tot_anc:.2f}**")
-  st.markdown("---")
-
-  st.markdown("##### PASSIVO E PATRIMÔNIO LÍQUIDO")
-  df_pc, tot_pc = calcular_secao("--- PASSIVO CIRCULANTE ---", "passivo")
-  st.dataframe(df_pc, use_container_width=True)
-  st.markdown(f"**Total Passivo Circulante: R$ {tot_pc:.2f}**")
-
-  df_pnc, tot_pnc = calcular_secao("--- PASSIVO NÃO CIRCULANTE ---", "passivo")
-  st.dataframe(df_pnc, use_container_width=True)
-  st.markdown(f"**Total Passivo Não Circulante: R$ {tot_pnc:.2f}**")
-
-  df_pl, tot_pl = calcular_secao("--- PATRIMÔNIO LÍQUIDO ---", "passivo")
-  st.dataframe(df_pl, use_container_width=True)
-  st.markdown(f"**Total Patrimônio Líquido: R$ {tot_pl:.2f}**")
-  st.markdown(f"### **TOTAL DO PASSIVO + PL: R$ {tot_pc + tot_pnc + tot_pl:.2f}**")
-  st.markdown("---")
-
-  st.subheader("2. DRE")
-  df_rec, _ = calcular_secao("--- RECEITAS ---", "passivo")
-  st.dataframe(df_rec, use_container_width=True)
-  st.markdown(f"**Receita Líquida: R$ {receita_liquida:.2f}**")
-
-  df_desp, _ = calcular_secao("--- CUSTOS E DESPESAS ---", "ativo")
-  st.dataframe(df_desp, use_container_width=True)
-  st.markdown(f"### **Resultado Líquido: R$ {lucro_liquido:.2f}**")
-# -------------------------------------------------------------------------
-# ABA 3: DEMONSTRAÇÕES CONTÁBEIS
+# ABA 3: DEMONSTRAÇÕES CONTÁBEIS & LIVROS OFICIAIS
 # -------------------------------------------------------------------------
 with aba_demonstracoes:
   st.header("📊 Demonstrações Contábeis Oficiais")
@@ -559,49 +504,9 @@ with aba_demonstracoes:
       },
   ]
   st.dataframe(pd.DataFrame(dados_dmpl), use_container_width=True)
-    # -------------------------------------------------------------------------
-# ADENSO: LIVRO CAIXA E LIVRO RAZÃO NA ABA DE DEMONSTRAÇÕES
-# -------------------------------------------------------------------------
-st.markdown("---")
-st.header("📚 Livros Fiscais e Contábeis Obrigatórios")
+  st.markdown("---")
 
-# 1. Livro Caixa
-st.subheader("1. Livro Caixa (Movimentação de Caixa e Bancos)")
-df_caixa = df_lanc[
-    df_lanc["Débito"].str.contains("Caixa|Bancos", na=False)
-    | df_lanc["Crédito"].str.contains("Caixa|Bancos", na=False)
-].copy()
-if not df_caixa.empty:
-  st.dataframe(df_caixa, use_container_width=True)
-else:
-  st.info("Nenhum lançamento registado nas contas de Caixa ou Bancos.")
-
-# 2. Livro Razão Analítico
-st.subheader("2. Livro Razão Analítico por Conta")
-conta_selecionada_razao = st.selectbox(
-    "Selecione a Conta Analítica para ver o Razão:", lista_contas_analiticas
-)
-
-df_razao_conta = df_lanc[
-    (df_lanc["Débito"] == conta_selecionada_razao)
-    | (df_lanc["Crédito"] == conta_selecionada_razao)
-].copy()
-
-if not df_razao_conta.empty:
-  st.dataframe(df_razao_conta, use_container_width=True)
-  total_debitos_conta = df_lanc[df_lanc["Débito"] == conta_selecionada_razao][
-      "Valor"
-  ].sum()
-  total_creditos_conta = df_lanc[df_lanc["Crédito"] == conta_selecionada_razao][
-      "Valor"
-  ].sum()
-  st.markdown(
-      f"**Totais na conta — Débitos: R$ {total_debitos_conta:.2f} | Créditos:"
-      f" R$ {total_creditos_conta:.2f}**"
-  )
-else:
-  st.info(
-      f"Não existem movimentos registados para a conta"
-      f" {conta_selecionada_razao}."
-  )
-    
+  # -------------------------------------------------------------------------
+  # LIVROS FISCAIS E CONTÁBEIS OBRIGATÓRIOS (EXCLUSIVOS NA ABA DEMONSTRAÇÕES)
+  # -------------------------------------------------------------------------
+  st.header("📚 Livros Fiscais e C
