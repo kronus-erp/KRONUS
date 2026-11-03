@@ -434,7 +434,7 @@ with aba_lancamentos:
   else:
       st.info("Nenhuma conta cadastrada neste grupo.")
 
-if "editando_conta_grupo" in st.session_state and st.session_state["editando_conta_grupo"] == grupo_gestao:
+  if "editando_conta_grupo" in st.session_state and st.session_state["editando_conta_grupo"] == grupo_gestao:
       g_edit = st.session_state["editando_conta_grupo"]
       i_edit = st.session_state["editando_conta_idx"]
       if i_edit < len(plano_de_contas[g_edit]):
@@ -445,7 +445,6 @@ if "editando_conta_grupo" in st.session_state and st.session_state["editando_con
           col_se, col_ce = st.columns(2)
           with col_se:
               if st.button("Salvar Alteração da Conta"):
-                  # 1. Atualiza o Plano de Contas
                   plano_de_contas[g_edit][i_edit] = novo_nome_conta
                   st.session_state.plano_de_contas = plano_de_contas
                   
@@ -455,7 +454,6 @@ if "editando_conta_grupo" in st.session_state and st.session_state["editando_con
                           registos_plano.append({"Grupo": g, "Conta": c})
                   pd.DataFrame(registos_plano).to_csv(ARQUIVO_PLANO, index=False, sep=";")
                   
-                  # 2. ATUALIZAÇÃO EM CASCATA NO HISTÓRICO DE LANÇAMENTOS (RAZÃO/DIÁRIO)
                   if "df_lancamentos" in st.session_state and not st.session_state.df_lancamentos.empty:
                       df_l = st.session_state.df_lancamentos
                       df_l["Débito"] = df_l["Débito"].replace(conta_antiga, novo_nome_conta)
@@ -463,7 +461,6 @@ if "editando_conta_grupo" in st.session_state and st.session_state["editando_con
                       st.session_state.df_lancamentos = df_l
                       df_l.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
                   
-                  # 3. Limpa os estados de edição
                   del st.session_state["editando_conta_grupo"]
                   del st.session_state["editando_conta_idx"]
                   st.success("Conta e histórico de lançamentos atualizados com sucesso em cascata!")
@@ -474,41 +471,41 @@ if "editando_conta_grupo" in st.session_state and st.session_state["editando_con
                   del st.session_state["editando_conta_idx"]
                   st.rerun()
 
-st.markdown("---")
+  st.markdown("---")
 
-if "editando_idx" not in st.session_state:
+  if "editando_idx" not in st.session_state:
     st.session_state.editando_idx = None
 
-    with st.form("form_partidas_dobradas", clear_on_submit=True):
-        col1, col2 = st.columns(2)
-        with col1:
-            data_lanc = st.date_input("Data do Lançamento")
-            conta_debito = st.selectbox("Conta a DEBITAR", opcoes_selectbox)
-        with col2:
-            valor_mov = st.number_input("Valor (R$)", min_value=0.0, format="%.2f", step=10.0)
-            conta_credito = st.selectbox("Conta a CREDITAR", opcoes_selectbox)
-        historico = st.text_input("Histórico / Descrição")
-        submitted = st.form_submit_button("Lançar Partida Dobrada")
-        
-        if submitted:
-            if conta_debito.startswith("---") or conta_credito.startswith("---"):
-                st.error("Selecione uma conta analítica válida!")
-            elif conta_debito == conta_credito:
-                st.error("Débito e Crédito não podem ser iguais!")
-            else:
-                novo_registo = pd.DataFrame([{
-                    "Data": str(data_lanc),
-                    "Historico": historico,
-                    "Débito": conta_debito,
-                    "Crédito": conta_credito,
-                    "Valor": valor_mov,
-                }])
-                st.session_state.df_lancamentos = pd.concat(
-                    [st.session_state.df_lancamentos, novo_registo], ignore_index=True
-                )
-            st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
-            st.success("Lançamento efetuado!")
-            st.rerun()
+  with st.form("form_partidas_dobradas", clear_on_submit=True):
+    col1, col2 = st.columns(2)
+    with col1:
+      data_lanc = st.date_input("Data do Lançamento")
+      conta_debito = st.selectbox("Conta a DEBITAR", opcoes_selectbox)
+    with col2:
+      valor_mov = st.number_input("Valor (R$)", min_value=0.0, format="%.2f", step=10.0)
+      conta_credito = st.selectbox("Conta a CREDITAR", opcoes_selectbox)
+    historico = st.text_input("Histórico / Descrição")
+    submitted = st.form_submit_button("Lançar Partida Dobrada")
+    
+    if submitted:
+      if conta_debito.startswith("---") or conta_credito.startswith("---"):
+        st.error("Selecione uma conta analítica válida!")
+      elif conta_debito == conta_credito:
+        st.error("Débito e Crédito não podem ser iguais!")
+      else:
+        novo_registo = pd.DataFrame([{
+            "Data": str(data_lanc),
+            "Historico": historico,
+            "Débito": conta_debito,
+            "Crédito": conta_credito,
+            "Valor": valor_mov,
+        }])
+        st.session_state.df_lancamentos = pd.concat(
+            [st.session_state.df_lancamentos, novo_registo], ignore_index=True
+        )
+        st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
+        st.success("Lançamento efetuado!")
+        st.rerun()
 
   st.markdown("---")
   st.subheader("Gestão e Listagem de Lançamentos")
@@ -526,7 +523,6 @@ if "editando_idx" not in st.session_state:
     with col_del:
       if st.button("🗑️", key=f"btn_del_{idx}"):
          st.session_state.editando_idx = None
-
 
 
 # -------------------------------------------------------------------------
@@ -714,5 +710,4 @@ with aba_demonstracoes:
     st.info(
         f"Não existem movimentos registados para a conta"
         f" {conta_selecionada_razao}."
-)
-        
+    )
