@@ -177,6 +177,10 @@ if "df_lancamentos" not in st.session_state:
     st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
     st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
 
+# Garantir coluna ID para identificação única dos lançamentos
+if "ID" not in st.session_state.df_lancamentos.columns:
+    st.session_state.df_lancamentos.insert(0, "ID", range(1, len(st.session_state.df_lancamentos) + 1))
+
 df_lanc = st.session_state.df_lancamentos
 
 total_receitas = df_lanc[
@@ -476,238 +480,25 @@ with aba_lancamentos:
   if "editando_idx" not in st.session_state:
     st.session_state.editando_idx = None
 
-  with st.form("form_partidas_dobradas", clear_on_submit=True):
-    col1, col2 = st.columns(2)
-    with col1:
-      data_lanc = st.date_input("Data do Lançamento")
-      conta_debito = st.selectbox("Conta a DEBITAR", opcoes_selectbox)
-    with col2:
-      valor_mov = st.number_input("Valor (R$)", min_value=0.0, format="%.2f", step=10.0)
-      conta_credito = st.selectbox("Conta a CREDITAR", opcoes_selectbox)
-    historico = st.text_input("Histórico / Descrição")
-    submitted = st.form_submit_button("Lançar Partida Dobrada")
-    
-    if submitted:
-      if conta_debito.startswith("---") or conta_credito.startswith("---"):
-        st.error("Selecione uma conta analítica válida!")
-      elif conta_debito == conta_credito:
-        st.error("Débito e Crédito não podem ser iguais!")
-      else:
-        novo_registo = pd.DataFrame([{
-            "Data": str(data_lanc),
-            "Historico": historico,
-            "Débito": conta_debito,
-            "Crédito": conta_credito,
-            "Valor": valor_mov,
-        }])
-        st.session_state.df_lancamentos = pd.concat(
-            [st.session_state.df_lancamentos, novo_registo], ignore_index=True
-        )
-        st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
-        st.success("Lançamento efetuado!")
-        st.rerun()
-
-  st.markdown("---")
-  st.subheader("Gestão e Listagem de Lançamentos")
-  for idx, row in st.session_state.df_lancamentos.iterrows():
-    col_info, col_edit, col_del = st.columns([4, 1, 1])
-    with col_info:
-      st.markdown(
-          f"**[{idx}] {row['Data']}** | {row['Historico']} | **D:**"
-          f" {row.get('Débito')} | **C:** {row.get('Crédito')} | **R$"
-          f" {row['Valor']:.2f}**"
-      )
-    with col_edit:
-      if st.button("✏️", key=f"btn_edit_{idx}"):
-        st.session_state.editando_idx = idx
-    with col_del:
-      if st.button("🗑️", key=f"btn_del_{idx}"):
-         st.session_state.editando_idx = None
-
-
-# -------------------------------------------------------------------------
-# ABA 3: DEMONSTRAÇÕES CONTÁBEIS & LIVROS OFICIAIS
-# -------------------------------------------------------------------------
-with aba_demonstracoes:
-  st.header("Demonstrações Contábeis Oficiais")
-  st.markdown("Relatórios financeiros gerados em conformidade com a legislação e ITG 1000.")
-
-  # 1. Balanço Patrimonial
-  st.subheader("1. Balanço Patrimonial")
-  st.markdown("##### ATIVO")
-
-  st.markdown("###### Ativo Circulante")
-  df_ac, tot_ac = calcular_secao("--- ATIVO CIRCULANTE ---", "ativo")
-  st.dataframe(df_ac, use_container_width=True)
-  st.markdown(f"**Total Ativo Circulante: R$ {tot_ac:.2f}**")
-
-  st.markdown("###### Ativo Não Circulante")
-  df_anc, tot_anc = calcular_secao("--- ATIVO NÃO CIRCULANTE ---", "ativo")
-  st.dataframe(df_anc, use_container_width=True)
-  st.markdown(f"**Total Ativo Não Circulante: R$ {tot_anc:.2f}**")
-
-  st.markdown(f"### **TOTAL DO ATIVO: R$ {tot_ac + tot_anc:.2f}**")
-  st.markdown("---")
-
-  st.markdown("##### PASSIVO E PATRIMÔNIO LÍQUIDO")
-  st.markdown("###### Passivo Circulante")
-  df_pc, tot_pc = calcular_secao("--- PASSIVO CIRCULANTE ---", "passivo")
-  st.dataframe(df_pc, use_container_width=True)
-  st.markdown(f"**Total Passivo Circulante: R$ {tot_pc:.2f}**")
-
-  st.markdown("###### Passivo Não Circulante")
-  df_pnc, tot_pnc = calcular_secao("--- PASSIVO NÃO CIRCULANTE ---", "passivo")
-  st.dataframe(df_pnc, use_container_width=True)
-  st.markdown(f"**Total Passivo Não Circulante: R$ {tot_pnc:.2f}**")
-
-  st.markdown("###### Patrimônio Líquido")
-  df_pl, tot_pl = calcular_secao("--- PATRIMÔNIO LÍQUIDO ---", "passivo")
-  st.dataframe(df_pl, use_container_width=True)
-  st.markdown(f"**Total Patrimônio Líquido: R$ {tot_pl:.2f}**")
-
-  st.markdown(
-      f"### **TOTAL DO PASSIVO + PL: R$ {tot_pc + tot_pnc + tot_pl:.2f}**"
-  )
-  st.markdown("---")
-
-  # 2. DRE
-  st.subheader("2. DRE - Demonstração do Resultado do Exercício")
-  st.markdown("###### Receitas")
-  df_rec, _ = calcular_secao("--- RECEITAS ---", "passivo")
-  st.dataframe(df_rec, use_container_width=True)
-  st.markdown(f"**Receita Líquida: R$ {receita_liquida:.2f}**")
-
-  st.markdown("###### Custos e Despesas")
-  df_desp, _ = calcular_secao("--- CUSTOS E DESPESAS ---", "ativo")
-  st.dataframe(df_desp, use_container_width=True)
-  st.markdown(
-      f"### **Resultado Líquido do Exercício: R$ {lucro_liquido:.2f}**"
-  )
-  st.markdown("---")
-
-  # 3. DFC
-  st.subheader("3. DFC - Demonstração dos Fluxos de Caixa (Método Direto)")
-  entradas_caixa = df_lanc[
-      df_lanc["Débito"].str.contains("Caixa|Bancos", na=False)
-  ]["Valor"].sum()
-  saidas_caixa = df_lanc[
-      df_lanc["Crédito"].str.contains("Caixa|Bancos", na=False)
-  ]["Valor"].sum()
-  variacao_caixa = entradas_caixa - saidas_caixa
-
-  dados_dfc = [
-      {
-          "Fluxo de Caixa": "Entradas de Caixa (Disponibilidades)",
-          "Valor (R$)": entradas_caixa,
-      },
-      {
-          "Fluxo de Caixa": "Saídas de Caixa (Disponibilidades)",
-          "Valor (R$)": -saidas_caixa,
-      },
-      {
-          "Fluxo de Caixa": "(=) Variação Líquida de Caixa",
-          "Valor (R$)": variacao_caixa,
-      },
-  ]
-  st.dataframe(pd.DataFrame(dados_dfc), use_container_width=True)
-  st.markdown("---")
-
-  # 4. DVA
-  st.subheader("4. DVA - Demonstração do Valor Adicionado")
-  dados_dva = [
-      {
-          "Especificação": "Receitas (Geração de Valor)",
-          "Valor (R$)": total_receitas,
-      },
-      {
-          "Especificação": "Insumos Adquiridos de Terceiros / Despesas",
-          "Valor (R$)": -total_despesas,
-      },
-      {
-          "Especificação": "(=) Valor Adicionado Líquido Produzido",
-          "Valor (R$)": lucro_liquido,
-      },
-      {
-          "Especificação": "Distribuição do Valor Adicionado (Lucros Retidos)",
-          "Valor (R$)": lucro_liquido,
-      },
-  ]
-  st.dataframe(pd.DataFrame(dados_dva), use_container_width=True)
-  st.markdown("---")
-
-  # 5. DMPL
-  st.subheader("5. DMPL - Demonstração das Mutações do Patrimônio Líquido")
-  capital_social_inicial = df_lanc[
-      (df_lanc["Crédito"].str.contains("2.3.1", na=False))
-      & (df_lanc["Historico"].str.contains("Capital", na=False))
-  ]["Valor"].sum()
-
-  dados_dmpl = [
-      {
-          "Conta do PL": "Capital Subscrito / Realizado",
-          "Saldo Inicial (R$)": capital_social_inicial,
-          "Aumentos / Adições (R$)": 0.0,
-          "Resultado do Período (R$)": 0.0,
-          "Saldo Final (R$)": capital_social_inicial,
-      },
-      {
-          "Conta do PL": "Lucros Acumulados",
-          "Saldo Inicial (R$)": 0.0,
-          "Aumentos / Adições (R$)": 0.0,
-          "Resultado do Período (R$)": lucro_liquido,
-          "Saldo Final (R$)": lucro_liquido,
-      },
-  ]
-  st.dataframe(pd.DataFrame(dados_dmpl), use_container_width=True)
-  st.markdown("---")
-
-  # -------------------------------------------------------------------------
-  # LIVROS FISCAIS E CONTÁBEIS OBRIGATÓRIOS
-  # -------------------------------------------------------------------------
-  st.header("Livros Fiscais e Contábeis Obrigatórios")
-
-  # 1. Livro Diário
-  st.subheader("1. Livro Diário (Registo Cronológico)")
-  st.dataframe(df_lanc, use_container_width=True)
-  st.markdown("---")
-
-  # 2. Livro Caixa
-  st.subheader("2. Livro Caixa (Movimentação de Caixa e Bancos)")
-  df_caixa = df_lanc[
-      df_lanc["Débito"].str.contains("Caixa|Bancos", na=False)
-      | df_lanc["Crédito"].str.contains("Caixa|Bancos", na=False)
-  ].copy()
-  if not df_caixa.empty:
-    st.dataframe(df_caixa, use_container_width=True)
-  else:
-    st.info("Nenhum lançamento registado nas contas de Caixa ou Bancos.")
-  st.markdown("---")
-
-  # 3. Livro Razão Analítico
-  st.subheader("3. Livro Razão Analítico por Conta")
-  conta_selecionada_razao = st.selectbox(
-      "Selecione a Conta Analítica para ver o Razão:", lista_contas_analiticas
-  )
-
-  df_razao_conta = df_lanc[
-      (df_lanc["Débito"] == conta_selecionada_razao)
-      | (df_lanc["Crédito"] == conta_selecionada_razao)
-  ].copy()
-
-  if not df_razao_conta.empty:
-    st.dataframe(df_razao_conta, use_container_width=True)
-    total_debitos_conta = df_lanc[df_lanc["Débito"] == conta_selecionada_razao][
-        "Valor"
-    ].sum()
-    total_creditos_conta = df_lanc[df_lanc["Crédito"] == conta_selecionada_razao][
-        "Valor"
-    ].sum()
-    st.markdown(
-        f"Totais na conta -- Débitos: R$ {total_debitos_conta:.2f} | Créditos:"
-        f" R$ {total_creditos_conta:.2f}"
-    )
-  else:
-    st.info(
-        f"Não existem movimentos registados para a conta"
-        f" {conta_selecionada_razao}."
-    )
+  # MODAL / FORMULÁRIO DE EDIÇÃO DE LANÇAMENTO EXISTENTE
+  if st.session_state.editando_idx is not None:
+    idx_edit = st.session_state.editando_idx
+    if idx_edit in st.session_state.df_lancamentos.index:
+      row_edit = st.session_state.df_lancamentos.loc[idx_edit]
+      st.warning(f"✏️ **Editando o Lançamento ID/Índice #{idx_edit}**")
+      
+      with st.form("form_edicao_lancamento"):
+        col1_e, col2_e = st.columns(2)
+        with col1_e:
+          try:
+            data_val = pd.to_datetime(row_edit["Data"]).date()
+          except:
+            data_val = pd.to_datetime("today").date()
+          data_lanc_e = st.date_input("Data do Lançamento", value=data_val, key="edit_data")
+          
+          idx_deb = opcoes_selectbox.index(row_edit["Débito"]) if row_edit["Débito"] in opcoes_selectbox else 0
+          conta_debito_e = st.selectbox("Conta a DEBITAR", opcoes_selectbox, index=idx_deb, key="edit_deb")
+        
+        with col2_e:
+          valor_mov_e = st.number_input("Valor (R$)", min_value=0.0, value=float(row_edit["Valor"]), format="%.2f", step=10.0, key="edit_val")
+          idx_cred = opcoes_selectbox.index(row_edit["Crédito"]) if row_e
