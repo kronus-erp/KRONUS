@@ -452,7 +452,7 @@ if index_editando is not None:
         st.rerun()
 
     if "editando_idx" not in st.session_state:
-    st.session_state.editando_idx = None
+        st.session_state.editando_idx = None
 
   with st.form("form_partidas_dobradas", clear_on_submit=True):
     col1, col2 = st.columns(2)
