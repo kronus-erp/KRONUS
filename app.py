@@ -451,7 +451,7 @@ if index_editando is not None:
         del st.session_state["editando_conta_index"]
         st.rerun()
 
-  if "editando_idx" not in st.session_state:
+    if "editando_idx" not in st.session_state:
     st.session_state.editando_idx = None
 
   with st.form("form_partidas_dobradas", clear_on_submit=True):
