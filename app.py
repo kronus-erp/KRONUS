@@ -479,7 +479,7 @@ st.markdown("---")
 if "editando_idx" not in st.session_state:
     st.session_state.editando_idx = None
 
-with st.form("form_partidas_dobradas", clear_on_submit=True):
+    with st.form("form_partidas_dobradas", clear_on_submit=True):
         col1, col2 = st.columns(2)
         with col1:
             data_lanc = st.date_input("Data do Lançamento")
@@ -488,25 +488,27 @@ with st.form("form_partidas_dobradas", clear_on_submit=True):
             valor_mov = st.number_input("Valor (R$)", min_value=0.0, format="%.2f", step=10.0)
             conta_credito = st.selectbox("Conta a CREDITAR", opcoes_selectbox)
         historico = st.text_input("Histórico / Descrição")
-        submitted = st.form_submit_button("Lançar Partida Dobrada"):
-      if conta_debito.startswith("---") or conta_credito.startswith("---"):
-        st.error("Selecione uma conta analítica válida!")
-      elif conta_debito == conta_credito:
-        st.error("Débito e Crédito não podem ser iguais!")
-      else:
-        novo_registo = pd.DataFrame([{
-            "Data": str(data_lanc),
-            "Historico": historico,
-            "Débito": conta_debito,
-            "Crédito": conta_credito,
-            "Valor": valor_mov,
-        }])
-        st.session_state.df_lancamentos = pd.concat(
-            [st.session_state.df_lancamentos, novo_registo], ignore_index=True
-        )
-        st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
-        st.success("Lançamento efetuado!")
-        st.rerun()
+        submitted = st.form_submit_button("Lançar Partida Dobrada")
+        
+        if submitted:
+            if conta_debito.startswith("---") or conta_credito.startswith("---"):
+                st.error("Selecione uma conta analítica válida!")
+            elif conta_debito == conta_credito:
+                st.error("Débito e Crédito não podem ser iguais!")
+            else:
+                novo_registo = pd.DataFrame([{
+                    "Data": str(data_lanc),
+                    "Historico": historico,
+                    "Débito": conta_debito,
+                    "Crédito": conta_credito,
+                    "Valor": valor_mov,
+                }])
+                st.session_state.df_lancamentos = pd.concat(
+                    [st.session_state.df_lancamentos, novo_registo], ignore_index=True
+                )
+                st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
+                st.success("Lançamento efetuado!")
+                st.rerun()
 
   st.markdown("---")
   st.subheader("Gestão e Listagem de Lançamentos")
