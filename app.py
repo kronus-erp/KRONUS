@@ -434,7 +434,7 @@ with aba_lancamentos:
   else:
       st.info("Nenhuma conta cadastrada neste grupo.")
 
-    if "editando_conta_grupo" in st.session_state and st.session_state["editando_conta_grupo"] == grupo_gestao:
+if "editando_conta_grupo" in st.session_state and st.session_state["editando_conta_grupo"] == grupo_gestao:
       g_edit = st.session_state["editando_conta_grupo"]
       i_edit = st.session_state["editando_conta_idx"]
       if i_edit < len(plano_de_contas[g_edit]):
