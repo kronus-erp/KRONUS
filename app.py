@@ -479,7 +479,7 @@ st.markdown("---")
 if "editando_idx" not in st.session_state:
     st.session_state.editando_idx = None
 
-  with st.form("form_partidas_dobradas", clear_on_submit=True):
+    with st.form("form_partidas_dobradas", clear_on_submit=True):
     col1, col2 = st.columns(2)
     with col1:
       data_lanc = st.date_input("Data do Lançamento")
