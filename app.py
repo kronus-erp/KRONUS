@@ -405,6 +405,51 @@ with aba_lancamentos:
           st.error(
               "Preencha o nome da conta ou verifique se ela já existe no grupo."
           )
+st.subheader("📋 Gestão do Plano de Contas")
+
+# Verifica se existem contas cadastradas na sessão
+if "plano_contas" in st.session_state and st.session_state["plano_contas"]:
+    for i, conta in enumerate(st.session_state["plano_contas"]):
+        col_info, col_edit, col_del = st.columns([6, 1, 1])
+        
+        with col_info:
+            st.write(f"**{conta.get('codigo', '')}** - {conta.get('nome', '')} *({conta.get('grupo', '')})*")
+            
+        with col_edit:
+            if st.button("✏️", key=f"edit_conta_{i}"):
+                st.session_state["editando_conta_index"] = i
+                st.rerun()
+                
+        with col_del:
+            if st.button("🗑️", key=f"del_conta_{i}"):
+                # Remove a conta da lista da sessão
+                st.session_state["plano_contas"].pop(i)
+                st.success("Conta excluída com sucesso!")
+                st.rerun()
+else:
+    st.info("Nenhuma conta analítica cadastrada além da estrutura padrão.")
+
+# Se houver uma conta selecionada para edição, preenchemos o formulário com os dados dela
+index_editando = st.session_state.get("editando_conta_index", None)
+
+if index_editando is not None:
+    conta_atual = st.session_state["plano_contas"][index_editando]
+    st.warning(f"A editar a conta: {conta_atual.get('nome')}")
+    
+    # Aqui colocas os inputs de texto já com os valores de 'conta_atual'
+    novo_codigo = st.text_input("Novo Código", value=conta_atual.get("codigo", ""))
+    novo_nome = st.text_input("Novo Nome", value=conta_atual.get("nome", ""))
+    
+    if st.button("Salvar Alterações"):
+        st.session_state["plano_contas"][index_editando]["codigo"] = novo_codigo
+        st.session_state["plano_contas"][index_editando]["nome"] = novo_nome
+        del st.session_state["editando_conta_index"]
+        st.success("Conta atualizada com sucesso!")
+        st.rerun()
+        
+    if st.button("Cancelar Edição"):
+        del st.session_state["editando_conta_index"]
+        st.rerun()
 
   if "editando_idx" not in st.session_state:
     st.session_state.editando_idx = None
