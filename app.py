@@ -474,7 +474,7 @@ if "editando_conta_grupo" in st.session_state and st.session_state["editando_con
                   del st.session_state["editando_conta_idx"]
                   st.rerun()
 
-  st.markdown("---")
+st.markdown("---")
 
   if "editando_idx" not in st.session_state:
     st.session_state.editando_idx = None
