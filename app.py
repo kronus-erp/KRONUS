@@ -27,18 +27,7 @@ with col_logo:
     st.image(ficheiro_logo, width=150)
   else:
     st.markdown("### KRONUS S.A.")
-
-with col_texto:
-  st.markdown(
-      "<h2 style='margin-bottom: 0px; color: #111;'></h2>",
-      unsafe_allow_html=True,
-  )
-  st.markdown(
-      "<h4 style='margin-top: 5px; color: #555; font-weight: 400;'>KRONUS: Valor"
-      " em cada segundo</h4>",
-      unsafe_allow_html=True,
-  )
-
+      
 st.markdown("---")
 
 # -------------------------------------------------------------------------
