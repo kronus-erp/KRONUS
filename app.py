@@ -33,13 +33,13 @@ with col_logo:
 st.markdown("---")
 
 # -------------------------------------------------------------------------
-# CRIAÇÃO DAS ABAS PRINCIPAIS (INCLUINDO O eSOCIAL)
+# CRIAÇÃO DAS ABAS PRINCIPAIS
 # -------------------------------------------------------------------------
 aba_empresa, aba_lancamentos, aba_demonstracoes, aba_esocial = st.tabs([
     "🏢 Cadastro da Empresa",
     "📝 Lançamentos & Diário",
     "📊 Demonstrações Contábeis",
-    "🛡️ Módulo eSocial (S-1000)"
+    "🛡️ Módulo eSocial"
 ])
 
 # Ficheiros de Persistência
@@ -609,127 +609,7 @@ with aba_demonstracoes:
 
 
 # -------------------------------------------------------------------------
-# ABA 4: MÓDULO eSOCIAL (S-1000)
-# -------------------------------------------------------------------------
-with aba_esocial:
-  st.header("🛡️ eSocial - Evento S-1000 (Informações do Empregador)")
-  st.markdown("Gere o arquivo XML oficial para transmissão e validação dos dados da empresa no ambiente do eSocial.")
-
-  def gerar_xml_s1000(
-      tp_amb, proc_emi, ver_proc, tp_insc, nr_insc,
-      class_trib, ind_coop, ind_constr, ind_desoneracao,
-      nm_ctt, cpf_ctt, fone_fixo, email_ctt
-  ):
-    esocial = ET.Element(
-        "eSocial", xmlns="http://www.esocial.gov.br/schema/evt/evtInfoEmpregador/v_S_01_03_00"
-    )
-    id_evt = f"ID{tp_insc}{nr_insc.zfill(14)}2026110312000000001"
-    evt = ET.SubElement(esocial, "evtInfoEmpregador", Id=id_evt)
-
-    ide_evento = ET.SubElement(evt, "ideEvento")
-    ET.SubElement(ide_evento, "tpAmb").text = str(tp_amb)
-    ET.SubElement(ide_evento, "procEmi").text = str(proc_emi)
-    ET.SubElement(ide_evento, "verProc").text = str(ver_proc)
-
-    ide_empregador = ET.SubElement(evt, "ideEmpregador")
-    ET.SubElement(ide_empregador, "tpInsc").text = str(tp_insc)
-    ET.SubElement(ide_empregador, "nrInsc").text = str(nr_insc)
-
-    info_empregador = ET.SubElement(evt, "infoEmpregador")
-    inclusao = ET.SubElement(info_empregador, "inclusao")
-
-    ide_periodo = ET.SubElement(inclusao, "idePeriodo")
-    ET.SubElement(ide_periodo, "iniValid").text = "2026-01"
-
-    info_cadastro = ET.SubElement(inclusao, "infoCadastro")
-    ET.SubElement(info_cadastro, "classTrib").text = str(class_trib)
-    ET.SubElement(info_cadastro, "indCoop").text = str(ind_coop)
-    ET.SubElement(info_cadastro, "indConstr").text = str(ind_constr)
-    ET.SubElement(info_cadastro, "indDesoneracao").text = str(ind_desoneracao)
-    ET.SubElement(info_cadastro, "indOptRegEletron").text = "1"
-
-    contato = ET.SubElement(info_cadastro, "contato")
-    ET.SubElement(contato, "nmCtt").text = nm_ctt
-    ET.SubElement(contato, "cpfCtt").text = cpf_ctt
-    if fone_fixo:
-      ET.SubElement(contato, "foneFijo").text = fone_fixo
-    ET.SubElement(contato, "email").text = email_ctt
-
-    xml_str = minidom.parseString(ET.tostring(esocial)).toprettyxml(indent="  ")
-    return xml_str
-
-  with st.form("form_s1000_kronus"):
-    st.markdown("### 1. Parâmetros de Transmissão")
-    col_p1, col_p2, col_p3 = st.columns(3)
-    with col_p1:
-      tp_amb = st.selectbox("Ambiente", ["2 - Produção Restrita (Testes)", "1 - Produção Real"], index=0)
-      tp_amb_val = 2 if "2" in tp_amb else 1
-    with col_p2:
-      tp_insc = st.selectbox("Tipo de Inscrição", ["1 - CNPJ", "2 - CPF"], index=0)
-      tp_insc_val = 1 if "1" in tp_insc else 2
-    with col_p3:
-      nr_insc = st.text_input("Número do CNPJ/CPF (somente números)", "00000000000100")
-
-    st.markdown("---")
-    st.markdown("### 2. Classificação Tributária e Regimes")
-    col_t1, col_t2 = st.columns(2)
-    with col_t1:
-      class_trib_opcoes = {
-          "01": "01 - Simples Nacional (Sem Substituição Previdenciária)",
-          "02": "02 - Simples Nacional (Com Substituição Previdenciária)",
-          "03": "03 - Simples Nacional (Atividades Mistas)",
-          "99": "99 - Pessoas Jurídicas em Geral (Lucro Presumido / Lucro Real)",
-      }
-      class_trib_sel = st.selectbox("Classificação Tributária", list(class_trib_opcoes.values()), index=0)
-      class_trib_val = class_trib_sel.split(" - ")[0]
-
-      ind_coop = st.selectbox("Indicativo de Cooperativa", [
-          "0 - Não é cooperativa", "1 - Cooperativa de Trabalho",
-          "2 - Cooperativa de Produção", "3 - Outras Cooperativas"
-      ])
-      ind_coop_val = ind_coop.split(" - ")[0]
-
-    with col_t2:
-      ind_desoneracao = st.selectbox("Desoneração da Folha (CPRB)", ["0 - Não Aplicável", "1 - Empresa Enquadrada na Desoneração"])
-      ind_desoneracao_val = ind_desoneracao.split(" - ")[0]
-
-      ind_constr = st.selectbox("Indicativo de Construtora", ["0 - Não é Construtora", "1 - Empresa Construtora"])
-      ind_constr_val = ind_constr.split(" - ")[0]
-
-    st.markdown("---")
-    st.markdown("### 3. Dados do Responsável de Contato")
-    col_c1, col_c2 = st.columns(2)
-    with col_c1:
-      nm_ctt = st.text_input("Nome do Contato", value="Marcelo Arildo Francisco Denardi da Silva")
-      cpf_ctt = st.text_input("CPF do Contato (somente números)", "00000000000")
-    with col_c2:
-      fone_fixo = st.text_input("Telefone de Contato", "(41) 99999-9999")
-      email_ctt = st.text_input("E-mail do Responsável", "contato@contabilions.com.br")
-
-    btn_gerar_s1000 = st.form_submit_button("⚙️ Gerar e Validar XML do S-1000")
-
-  if btn_gerar_s1000:
-    xml_resultado = gerar_xml_s1000(
-        tp_amb=tp_amb_val, proc_emi=1, ver_proc="KRONUS_ERP_v1.0",
-        tp_insc=tp_insc_val, nr_insc=nr_insc, class_trib=class_trib_val,
-        ind_coop=ind_coop_val, ind_constr=ind_constr_val,
-        ind_desoneracao=ind_desoneracao_val, nm_ctt=nm_ctt,
-        cpf_ctt=cpf_ctt, fone_fixo=fone_fixo, email_ctt=email_ctt
-    )
-
-    st.success("✅ Evento S-1000 gerado com sucesso!")
-    st.markdown("#### Visualização do XML Gerado:")
-    st.code(xml_resultado, language="xml")
-
-    st.download_button(
-        label="📥 Baixar Arquivo XML (evtInfoEmpregador.xml)",
-        data=xml_resultado,
-        file_name=f"S1000_{nr_insc}.xml",
-        mime="application/xml",
-    )
-
-# -------------------------------------------------------------------------
-# DENTRO DA ABA 4: MÓDULO eSOCIAL (ATUALIZADO COM S-1000 E S-1010)
+# ABA 4: MÓDULO eSOCIAL (S-1000 E S-1010) - CORRIGIDO E ISOLADO
 # -------------------------------------------------------------------------
 with aba_esocial:
   st.header("🛡️ Módulo eSocial - Gestão de Eventos XML")
@@ -786,7 +666,7 @@ with aba_esocial:
 
       return minidom.parseString(ET.tostring(esocial)).toprettyxml(indent="  ")
 
-    with st.form("form_s1000_kronus"):
+    with st.form("form_s1000_kronus_ unico"):
       col_p1, col_p2, col_p3 = st.columns(3)
       with col_p1:
         tp_amb = st.selectbox("Ambiente", ["2 - Produção Restrita", "1 - Produção Real"], index=0, key="s1000_amb")
@@ -856,7 +736,7 @@ with aba_esocial:
 
       return minidom.parseString(ET.tostring(esocial)).toprettyxml(indent="  ")
 
-    with st.form("form_s1010_kronus"):
+    with st.form("form_s1010_kronus_unico"):
       col_r1, col_r2 = st.columns(2)
       with col_r1:
         cod_rubr = st.text_input("Código da Rubrica", "1001")
@@ -880,4 +760,3 @@ with aba_esocial:
       )
       st.success("✅ XML S-1010 (Rubricas) gerado com sucesso!")
       st.code(xml_s1010, language="xml")
-        
