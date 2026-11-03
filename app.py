@@ -149,6 +149,7 @@ for grupo, contas in plano_de_contas.items():
 dados_iniciais = [
     {
         "ID": 1,
+        "Data": "2026-01-02",
         "Histórico": "Subscricao de Capital Social Inicial",
         "Débito": "2.3.1.02 - Capital Subscrito a Realizar",
         "Crédito": "2.3.1.01 - Capital Subscrito / Realizado",
@@ -156,6 +157,7 @@ dados_iniciais = [
     },
     {
         "ID": 2,
+        "Data": "2026-01-02",
         "Histórico": "Integralizacao de Capital Social em Bancos/Caixa",
         "Débito": "1.1.1.02 - Bancos Conta Movimento",
         "Crédito": "2.3.1.02 - Capital Subscrito a Realizar",
@@ -163,13 +165,13 @@ dados_iniciais = [
     },
     {
         "ID": 3,
+        "Data": "2026-01-02",
         "Histórico": "Recebimento de Prestacao de Servicos",
         "Débito": "1.1.1.02 - Bancos Conta Movimento",
         "Crédito": "4.1.2.01 - Receita de Prestacao de Servicos",
         "Valor": 24.00,
     }
 ]
-
 
 
 if "df_lancamentos" not in st.session_state:
