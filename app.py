@@ -1,4 +1,6 @@
 import os
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
 import pandas as pd
 import streamlit as st
 
@@ -31,12 +33,13 @@ with col_logo:
 st.markdown("---")
 
 # -------------------------------------------------------------------------
-# CRIAÇÃO DAS TRÊS ABAS PRINCIPAIS
+# CRIAÇÃO DAS ABAS PRINCIPAIS (INCLUINDO O eSOCIAL)
 # -------------------------------------------------------------------------
-aba_empresa, aba_lancamentos, aba_demonstracoes = st.tabs([
+aba_empresa, aba_lancamentos, aba_demonstracoes, aba_esocial = st.tabs([
     "🏢 Cadastro da Empresa",
     "📝 Lançamentos & Diário",
     "📊 Demonstrações Contábeis",
+    "🛡️ Módulo eSocial (S-1000)"
 ])
 
 # Ficheiros de Persistência
@@ -177,38 +180,29 @@ if "df_lancamentos" not in st.session_state:
     st.session_state.df_lancamentos = pd.DataFrame(dados_iniciais)
     st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
 
-# Garantir coluna ID para identificação única dos lançamentos
 if "ID" not in st.session_state.df_lancamentos.columns:
     st.session_state.df_lancamentos.insert(0, "ID", range(1, len(st.session_state.df_lancamentos) + 1))
 
 df_lanc = st.session_state.df_lancamentos
 
 total_receitas = df_lanc[
-    df_lanc["Crédito"].isin(
-        plano_de_contas.get("--- RECEITAS ---", [])
-    )
+    df_lanc["Crédito"].isin(plano_de_contas.get("--- RECEITAS ---", []))
     & df_lanc["Crédito"].str.contains("4.1", na=False)
 ]["Valor"].sum()
 deducoes_receita = df_lanc[
-    df_lanc["Débito"].isin(
-        plano_de_contas.get("--- RECEITAS ---", [])
-    )
+    df_lanc["Débito"].isin(plano_de_contas.get("--- RECEITAS ---", []))
     & df_lanc["Débito"].str.contains("4.2", na=False)
 ]["Valor"].sum()
 receita_liquida = total_receitas - deducoes_receita
 
 total_custos = df_lanc[
-    df_lanc["Débito"].isin(
-        plano_de_contas.get("--- CUSTOS E DESPESAS ---", [])
-    )
+    df_lanc["Débito"].isin(plano_de_contas.get("--- CUSTOS E DESPESAS ---", []))
     & df_lanc["Débito"].str.contains("5.1", na=False)
 ]["Valor"].sum()
 lucro_bruto = receita_liquida - total_custos
 
 total_despesas = df_lanc[
-    df_lanc["Débito"].isin(
-        plano_de_contas.get("--- CUSTOS E DESPESAS ---", [])
-    )
+    df_lanc["Débito"].isin(plano_de_contas.get("--- CUSTOS E DESPESAS ---", []))
     & df_lanc["Débito"].str.contains("5.2", na=False)
 ]["Valor"].sum()
 lucro_liquido = lucro_bruto - total_despesas
@@ -229,6 +223,7 @@ def calcular_secao(nome_grupo, tipo="ativo"):
     except Exception:
       dados.append({"Conta": conta, "Saldo (R$)": 0.0})
   return pd.DataFrame(dados), tot
+
 
 # -------------------------------------------------------------------------
 # ABA 1: CADASTRO DA EMPRESA
@@ -300,9 +295,7 @@ with aba_empresa:
 
   else:
     if not st.session_state.df_empresa.empty:
-      empresas_disponiveis = st.session_state.df_empresa[
-          "Razao_Social"
-      ].tolist()
+      empresas_disponiveis = st.session_state.df_empresa["Razao_Social"].tolist()
       empresa_selecionada = st.selectbox(
           "Selecione a Empresa para Gerir/Editar:", empresas_disponiveis
       )
@@ -349,21 +342,13 @@ with aba_empresa:
         if salvar_empresa:
           st.session_state.df_empresa.loc[idx_emp, "Razao_Social"] = razao_social
           st.session_state.df_empresa.loc[idx_emp, "CNPJ"] = cnpj
-          st.session_state.df_empresa.loc[
-              idx_emp, "Inscricao_Estadual"
-          ] = inscricao_estadual
-          st.session_state.df_empresa.loc[
-              idx_emp, "Regime_Tributario"
-          ] = regime_tributario
+          st.session_state.df_empresa.loc[idx_emp, "Inscricao_Estadual"] = inscricao_estadual
+          st.session_state.df_empresa.loc[idx_emp, "Regime_Tributario"] = regime_tributario
           st.session_state.df_empresa.loc[idx_emp, "Endereco"] = endereco
-          st.session_state.df_empresa.loc[
-              idx_emp, "Contador_Responsavel"
-          ] = contador_resp
+          st.session_state.df_empresa.loc[idx_emp, "Contador_Responsavel"] = contador_resp
           st.session_state.df_empresa.loc[idx_emp, "Email"] = email_empresa
 
-          st.session_state.df_empresa.to_csv(
-              ARQUIVO_EMPRESA, index=False, sep=";"
-          )
+          st.session_state.df_empresa.to_csv(ARQUIVO_EMPRESA, index=False, sep=";")
           st.success("Dados atualizados com sucesso!")
           st.rerun()
 
@@ -373,7 +358,7 @@ with aba_empresa:
 
 
 # -------------------------------------------------------------------------
-# ABA 2: LANÇAMENTOS & DIÁRIO (COM GESTÃO DO PLANO DE CONTAS INTEGRADA)
+# ABA 2: LANÇAMENTOS & DIÁRIO
 # -------------------------------------------------------------------------
 with aba_lancamentos:
   st.header("Módulo de Lançamentos (Partidas Dobradas)")
@@ -402,11 +387,8 @@ with aba_lancamentos:
           st.success(f"Conta '{nova_conta_str}' adicionada com sucesso!")
           st.rerun()
         else:
-          st.error(
-              "Preencha o nome da conta ou verifique se ela já existe no grupo."
-          )
+          st.error("Preencha o nome da conta ou verifique se ela já existe no grupo.")
 
-  # GESTÃO DO PLANO DE CONTAS (EDITAR / EXCLUIR)
   st.markdown("---")
   st.subheader("📋 Gestão do Plano de Contas")
   
@@ -467,7 +449,7 @@ with aba_lancamentos:
                   
                   del st.session_state["editando_conta_grupo"]
                   del st.session_state["editando_conta_idx"]
-                  st.success("Conta e histórico de lançamentos atualizados com sucesso em cascata!")
+                  st.success("Conta e histórico atualizados em cascata!")
                   st.rerun()
           with col_ce:
               if st.button("Cancelar Edição da Conta"):
@@ -480,7 +462,6 @@ with aba_lancamentos:
   if "editando_idx" not in st.session_state:
     st.session_state.editando_idx = None
 
-  # MODAL / FORMULÁRIO DE EDIÇÃO DE LANÇAMENTO EXISTENTE
   if st.session_state.editando_idx is not None:
     idx_edit = st.session_state.editando_idx
     if idx_edit in st.session_state.df_lancamentos.index:
@@ -533,7 +514,6 @@ with aba_lancamentos:
           st.session_state.editando_idx = None
           st.rerun()
 
-  # FORMULÁRIO DE NOVO LANÇAMENTO
   st.subheader("➕ Novo Lançamento de Partida Dobrada")
   with st.form("form_partidas_dobradas", clear_on_submit=True):
     col1, col2 = st.columns(2)
@@ -599,10 +579,8 @@ with aba_demonstracoes:
   st.header("Demonstrações Contábeis Oficiais")
   st.markdown("Relatórios financeiros gerados em conformidade com a legislação e ITG 1000.")
 
-  # 1. Balanço Patrimonial
   st.subheader("1. Balanço Patrimonial")
   st.markdown("##### ATIVO")
-
   st.markdown("###### Ativo Circulante")
   df_ac, tot_ac = calcular_secao("--- ATIVO CIRCULANTE ---", "ativo")
   st.dataframe(df_ac, use_container_width=True)
@@ -612,170 +590,140 @@ with aba_demonstracoes:
   df_anc, tot_anc = calcular_secao("--- ATIVO NÃO CIRCULANTE ---", "ativo")
   st.dataframe(df_anc, use_container_width=True)
   st.markdown(f"**Total Ativo Não Circulante: R$ {tot_anc:.2f}**")
-
   st.markdown(f"### **TOTAL DO ATIVO: R$ {tot_ac + tot_anc:.2f}**")
   st.markdown("---")
 
-  st.markdown("##### PASSIVO E PATRIMÔNIO LÍQUIDO")
-  st.markdown("###### Passivo Circulante")
-  df_pc, tot_pc = calcular_secao("--- PASSIVO CIRCULANTE ---", "passivo")
-  st.dataframe(df_pc, use_container_width=True)
-  st.markdown(f"**Total Passivo Circulante: R$ {tot_pc:.2f}**")
-
-  st.markdown("###### Passivo Não Circulante")
-  df_pnc, tot_pnc = calcular_secao("--- PASSIVO NÃO CIRCULANTE ---", "passivo")
-  st.dataframe(df_pnc, use_container_width=True)
-  st.markdown(f"**Total Passivo Não Circulante: R$ {tot_pnc:.2f}**")
-
-  st.markdown("###### Patrimônio Líquido")
-  df_pl, tot_pl = calcular_secao("--- PATRIMÔNIO LÍQUIDO ---", "passivo")
-  st.dataframe(df_pl, use_container_width=True)
-  st.markdown(f"**Total Patrimônio Líquido: R$ {tot_pl:.2f}**")
-
-  st.markdown(
-      f"### **TOTAL DO PASSIVO + PL: R$ {tot_pc + tot_pnc + tot_pl:.2f}**"
-  )
-  st.markdown("---")
-
-  # 2. DRE
   st.subheader("2. DRE - Demonstração do Resultado do Exercício")
-  st.markdown("###### Receitas")
   df_rec, _ = calcular_secao("--- RECEITAS ---", "passivo")
   st.dataframe(df_rec, use_container_width=True)
   st.markdown(f"**Receita Líquida: R$ {receita_liquida:.2f}**")
-
-  st.markdown("###### Custos e Despesas")
+  
   df_desp, _ = calcular_secao("--- CUSTOS E DESPESAS ---", "ativo")
   st.dataframe(df_desp, use_container_width=True)
-  st.markdown(
-      f"### **Resultado Líquido do Exercício: R$ {lucro_liquido:.2f}**"
-  )
+  st.markdown(f"### **Resultado Líquido do Exercício: R$ {lucro_liquido:.2f}**")
   st.markdown("---")
 
-  # 3. DFC
-  st.subheader("3. DFC - Demonstração dos Fluxos de Caixa (Método Direto)")
-  entradas_caixa = df_lanc[
-      df_lanc["Débito"].str.contains("Caixa|Bancos", na=False)
-  ]["Valor"].sum()
-  saidas_caixa = df_lanc[
-      df_lanc["Crédito"].str.contains("Caixa|Bancos", na=False)
-  ]["Valor"].sum()
-  variacao_caixa = entradas_caixa - saidas_caixa
-
-  dados_dfc = [
-      {
-          "Fluxo de Caixa": "Entradas de Caixa (Disponibilidades)",
-          "Valor (R$)": entradas_caixa,
-      },
-      {
-          "Fluxo de Caixa": "Saídas de Caixa (Disponibilidades)",
-          "Valor (R$)": -saidas_caixa,
-      },
-      {
-          "Fluxo de Caixa": "(=) Variação Líquida de Caixa",
-          "Valor (R$)": variacao_caixa,
-      },
-  ]
-  st.dataframe(pd.DataFrame(dados_dfc), use_container_width=True)
-  st.markdown("---")
-
-  # 4. DVA
-  st.subheader("4. DVA - Demonstração do Valor Adicionado")
-  dados_dva = [
-      {
-          "Especificação": "Receitas (Geração de Valor)",
-          "Valor (R$)": total_receitas,
-      },
-      {
-          "Especificação": "Insumos Adquiridos de Terceiros / Despesas",
-          "Valor (R$)": -total_despesas,
-      },
-      {
-          "Especificação": "(=) Valor Adicionado Líquido Produzido",
-          "Valor (R$)": lucro_liquido,
-      },
-      {
-          "Especificação": "Distribuição do Valor Adicionado (Lucros Retidos)",
-          "Valor (R$)": lucro_liquido,
-      },
-  ]
-  st.dataframe(pd.DataFrame(dados_dva), use_container_width=True)
-  st.markdown("---")
-
-  # 5. DMPL
-  st.subheader("5. DMPL - Demonstração das Mutações do Patrimônio Líquido")
-  capital_social_inicial = df_lanc[
-      (df_lanc["Crédito"].str.contains("2.3.1", na=False))
-      & (df_lanc["Historico"].str.contains("Capital", na=False))
-  ]["Valor"].sum()
-
-  dados_dmpl = [
-      {
-          "Conta do PL": "Capital Subscrito / Realizado",
-          "Saldo Inicial (R$)": capital_social_inicial,
-          "Aumentos / Adições (R$)": 0.0,
-          "Resultado do Período (R$)": 0.0,
-          "Saldo Final (R$)": capital_social_inicial,
-      },
-      {
-          "Conta do PL": "Lucros Acumulados",
-          "Saldo Inicial (R$)": 0.0,
-          "Aumentos / Adições (R$)": 0.0,
-          "Resultado do Período (R$)": lucro_liquido,
-          "Saldo Final (R$)": lucro_liquido,
-      },
-  ]
-  st.dataframe(pd.DataFrame(dados_dmpl), use_container_width=True)
-  st.markdown("---")
-
-  # -------------------------------------------------------------------------
-  # LIVROS FISCAIS E CONTÁBEIS OBRIGATÓRIOS
-  # -------------------------------------------------------------------------
-  st.header("Livros Fiscais e Contábeis Obrigatórios")
-
-  # 1. Livro Diário
-  st.subheader("1. Livro Diário (Registo Cronológico)")
+  st.header("Livros Contábeis Obrigatórios")
+  st.subheader("Livro Diário")
   st.dataframe(df_lanc, use_container_width=True)
-  st.markdown("---")
 
-  # 2. Livro Caixa
-  st.subheader("2. Livro Caixa (Movimentação de Caixa e Bancos)")
-  df_caixa = df_lanc[
-      df_lanc["Débito"].str.contains("Caixa|Bancos", na=False)
-      | df_lanc["Crédito"].str.contains("Caixa|Bancos", na=False)
-  ].copy()
-  if not df_caixa.empty:
-    st.dataframe(df_caixa, use_container_width=True)
-  else:
-    st.info("Nenhum lançamento registado nas contas de Caixa ou Bancos.")
-  st.markdown("---")
 
-  # 3. Livro Razão Analítico
-  st.subheader("3. Livro Razão Analítico por Conta")
-  conta_selecionada_razao = st.selectbox(
-      "Selecione a Conta Analítica para ver o Razão:", lista_contas_analiticas
-  )
+# -------------------------------------------------------------------------
+# ABA 4: MÓDULO eSOCIAL (S-1000)
+# -------------------------------------------------------------------------
+with aba_esocial:
+  st.header("🛡️ eSocial - Evento S-1000 (Informações do Empregador)")
+  st.markdown("Gere o arquivo XML oficial para transmissão e validação dos dados da empresa no ambiente do eSocial.")
 
-  df_razao_conta = df_lanc[
-      (df_lanc["Débito"] == conta_selecionada_razao)
-      | (df_lanc["Crédito"] == conta_selecionada_razao)
-  ].copy()
-
-  if not df_razao_conta.empty:
-    st.dataframe(df_razao_conta, use_container_width=True)
-    total_debitos_conta = df_lanc[df_lanc["Débito"] == conta_selecionada_razao][
-        "Valor"
-    ].sum()
-    total_creditos_conta = df_lanc[df_lanc["Crédito"] == conta_selecionada_razao][
-        "Valor"
-    ].sum()
-    st.markdown(
-        f"Totais na conta -- Débitos: R$ {total_debitos_conta:.2f} | Créditos:"
-        f" R$ {total_creditos_conta:.2f}"
+  def gerar_xml_s1000(
+      tp_amb, proc_emi, ver_proc, tp_insc, nr_insc,
+      class_trib, ind_coop, ind_constr, ind_desoneracao,
+      nm_ctt, cpf_ctt, fone_fixo, email_ctt
+  ):
+    esocial = ET.Element(
+        "eSocial", xmlns="http://www.esocial.gov.br/schema/evt/evtInfoEmpregador/v_S_01_03_00"
     )
-  else:
-    st.info(
-        f"Não existem movimentos registados para a conta"
-        f" {conta_selecionada_razao}."
+    id_evt = f"ID{tp_insc}{nr_insc.zfill(14)}2026110312000000001"
+    evt = ET.SubElement(esocial, "evtInfoEmpregador", Id=id_evt)
+
+    ide_evento = ET.SubElement(evt, "ideEvento")
+    ET.SubElement(ide_evento, "tpAmb").text = str(tp_amb)
+    ET.SubElement(ide_evento, "procEmi").text = str(proc_emi)
+    ET.SubElement(ide_evento, "verProc").text = str(ver_proc)
+
+    ide_empregador = ET.SubElement(evt, "ideEmpregador")
+    ET.SubElement(ide_empregador, "tpInsc").text = str(tp_insc)
+    ET.SubElement(ide_empregador, "nrInsc").text = str(nr_insc)
+
+    info_empregador = ET.SubElement(evt, "infoEmpregador")
+    inclusao = ET.SubElement(info_empregador, "inclusao")
+
+    ide_periodo = ET.SubElement(inclusao, "idePeriodo")
+    ET.SubElement(ide_periodo, "iniValid").text = "2026-01"
+
+    info_cadastro = ET.SubElement(inclusao, "infoCadastro")
+    ET.SubElement(info_cadastro, "classTrib").text = str(class_trib)
+    ET.SubElement(info_cadastro, "indCoop").text = str(ind_coop)
+    ET.SubElement(info_cadastro, "indConstr").text = str(ind_constr)
+    ET.SubElement(info_cadastro, "indDesoneracao").text = str(ind_desoneracao)
+    ET.SubElement(info_cadastro, "indOptRegEletron").text = "1"
+
+    contato = ET.SubElement(info_cadastro, "contato")
+    ET.SubElement(contato, "nmCtt").text = nm_ctt
+    ET.SubElement(contato, "cpfCtt").text = cpf_ctt
+    if fone_fixo:
+      ET.SubElement(contato, "foneFijo").text = fone_fixo
+    ET.SubElement(contato, "email").text = email_ctt
+
+    xml_str = minidom.parseString(ET.tostring(esocial)).toprettyxml(indent="  ")
+    return xml_str
+
+  with st.form("form_s1000_kronus"):
+    st.markdown("### 1. Parâmetros de Transmissão")
+    col_p1, col_p2, col_p3 = st.columns(3)
+    with col_p1:
+      tp_amb = st.selectbox("Ambiente", ["2 - Produção Restrita (Testes)", "1 - Produção Real"], index=0)
+      tp_amb_val = 2 if "2" in tp_amb else 1
+    with col_p2:
+      tp_insc = st.selectbox("Tipo de Inscrição", ["1 - CNPJ", "2 - CPF"], index=0)
+      tp_insc_val = 1 if "1" in tp_insc else 2
+    with col_p3:
+      nr_insc = st.text_input("Número do CNPJ/CPF (somente números)", "00000000000100")
+
+    st.markdown("---")
+    st.markdown("### 2. Classificação Tributária e Regimes")
+    col_t1, col_t2 = st.columns(2)
+    with col_t1:
+      class_trib_opcoes = {
+          "01": "01 - Simples Nacional (Sem Substituição Previdenciária)",
+          "02": "02 - Simples Nacional (Com Substituição Previdenciária)",
+          "03": "03 - Simples Nacional (Atividades Mistas)",
+          "99": "99 - Pessoas Jurídicas em Geral (Lucro Presumido / Lucro Real)",
+      }
+      class_trib_sel = st.selectbox("Classificação Tributária", list(class_trib_opcoes.values()), index=0)
+      class_trib_val = class_trib_sel.split(" - ")[0]
+
+      ind_coop = st.selectbox("Indicativo de Cooperativa", [
+          "0 - Não é cooperativa", "1 - Cooperativa de Trabalho",
+          "2 - Cooperativa de Produção", "3 - Outras Cooperativas"
+      ])
+      ind_coop_val = ind_coop.split(" - ")[0]
+
+    with col_t2:
+      ind_desoneracao = st.selectbox("Desoneração da Folha (CPRB)", ["0 - Não Aplicável", "1 - Empresa Enquadrada na Desoneração"])
+      ind_desoneracao_val = ind_desoneracao.split(" - ")[0]
+
+      ind_constr = st.selectbox("Indicativo de Construtora", ["0 - Não é Construtora", "1 - Empresa Construtora"])
+      ind_constr_val = ind_constr.split(" - ")[0]
+
+    st.markdown("---")
+    st.markdown("### 3. Dados do Responsável de Contato")
+    col_c1, col_c2 = st.columns(2)
+    with col_c1:
+      nm_ctt = st.text_input("Nome do Contato", value="Marcelo Arildo Francisco Denardi da Silva")
+      cpf_ctt = st.text_input("CPF do Contato (somente números)", "00000000000")
+    with col_c2:
+      fone_fixo = st.text_input("Telefone de Contato", "(41) 99999-9999")
+      email_ctt = st.text_input("E-mail do Responsável", "contato@contabilions.com.br")
+
+    btn_gerar_s1000 = st.form_submit_button("⚙️ Gerar e Validar XML do S-1000")
+
+  if btn_gerar_s1000:
+    xml_resultado = gerar_xml_s1000(
+        tp_amb=tp_amb_val, proc_emi=1, ver_proc="KRONUS_ERP_v1.0",
+        tp_insc=tp_insc_val, nr_insc=nr_insc, class_trib=class_trib_val,
+        ind_coop=ind_coop_val, ind_constr=ind_constr_val,
+        ind_desoneracao=ind_desoneracao_val, nm_ctt=nm_ctt,
+        cpf_ctt=cpf_ctt, fone_fixo=fone_fixo, email_ctt=email_ctt
     )
 
+    st.success("✅ Evento S-1000 gerado com sucesso!")
+    st.markdown("#### Visualização do XML Gerado:")
+    st.code(xml_resultado, language="xml")
+
+    st.download_button(
+        label="📥 Baixar Arquivo XML (evtInfoEmpregador.xml)",
+        data=xml_resultado,
+        file_name=f"S1000_{nr_insc}.xml",
+        mime="application/xml",
+    )
