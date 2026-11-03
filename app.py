@@ -506,9 +506,9 @@ if "editando_idx" not in st.session_state:
                 st.session_state.df_lancamentos = pd.concat(
                     [st.session_state.df_lancamentos, novo_registo], ignore_index=True
                 )
-                st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
-                st.success("Lançamento efetuado!")
-                st.rerun()
+                  st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
+                  st.success("Lançamento efetuado!")
+  st.rerun()
 
   st.markdown("---")
   st.subheader("Gestão e Listagem de Lançamentos")
