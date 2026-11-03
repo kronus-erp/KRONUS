@@ -30,7 +30,7 @@ with col_logo:
 
 with col_texto:
   st.markdown(
-      "<h2 style='margin-bottom: 0px; color: #111;'>KRONUS S.A.</h2>",
+      "<h2 style='margin-bottom: 0px; color: #111;'></h2>",
       unsafe_allow_html=True,
   )
   st.markdown(
