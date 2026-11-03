@@ -514,7 +514,6 @@ with aba_lancamentos:
         st.session_state.editando_idx = idx
     with col_del:
       if st.button("🗑️", key=f"btn_del_{idx}"):
-      if "editando_idx" not in st.session_state:
          st.session_state.editando_idx = None
 
 
