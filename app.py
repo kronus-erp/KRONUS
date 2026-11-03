@@ -7,7 +7,7 @@ st.set_page_config(
 )
 
 # -------------------------------------------------------------------------
-# CABEÇALHO CORPORATIVO COM LOGO À ESQUERDA E SLOGAN AO LADO
+# CABEÇALHO CORPORATIVO COM LOGO À ESQUERDA
 # -------------------------------------------------------------------------
 col_logo, col_texto = st.columns([1, 4])
 
@@ -162,7 +162,6 @@ dados_iniciais = [
     }
 ]
 
-
 if "df_lancamentos" not in st.session_state:
   if os.path.exists(ARQUIVO_RAZAO):
     try:
@@ -210,8 +209,6 @@ total_despesas = df_lanc[
 ]["Valor"].sum()
 lucro_liquido = lucro_bruto - total_despesas
 
-
-# Função auxiliar de cálculo global blindada contra erros
 def calcular_secao(nome_grupo, tipo="ativo"):
   contas_grupo = plano_de_contas.get(nome_grupo, [])
   dados = []
@@ -228,7 +225,6 @@ def calcular_secao(nome_grupo, tipo="ativo"):
     except Exception:
       dados.append({"Conta": conta, "Saldo (R$)": 0.0})
   return pd.DataFrame(dados), tot
-
 
 # -------------------------------------------------------------------------
 # ABA 1: CADASTRO DA EMPRESA
@@ -373,7 +369,7 @@ with aba_empresa:
 
 
 # -------------------------------------------------------------------------
-# ABA 2: LANÇAMENTOS & DIÁRIO
+# ABA 2: LANÇAMENTOS & DIÁRIO (COM GESTÃO DO PLANO DE CONTAS INTEGRADA)
 # -------------------------------------------------------------------------
 with aba_lancamentos:
   st.header("Módulo de Lançamentos (Partidas Dobradas)")
@@ -405,54 +401,73 @@ with aba_lancamentos:
           st.error(
               "Preencha o nome da conta ou verifique se ela já existe no grupo."
           )
-st.subheader("📋 Gestão do Plano de Contas")
 
-# Verifica se existem contas cadastradas na sessão
-if "plano_contas" in st.session_state and st.session_state["plano_contas"]:
-    for i, conta in enumerate(st.session_state["plano_contas"]):
-        col_info, col_edit, col_del = st.columns([6, 1, 1])
-        
-        with col_info:
-            st.write(f"**{conta.get('codigo', '')}** - {conta.get('nome', '')} *({conta.get('grupo', '')})*")
-            
-        with col_edit:
-            if st.button("✏️", key=f"edit_conta_{i}"):
-                st.session_state["editando_conta_index"] = i
-                st.rerun()
-                
-        with col_del:
-            if st.button("🗑️", key=f"del_conta_{i}"):
-                # Remove a conta da lista da sessão
-                st.session_state["plano_contas"].pop(i)
-                st.success("Conta excluída com sucesso!")
-                st.rerun()
-else:
-    st.info("Nenhuma conta analítica cadastrada além da estrutura padrão.")
+  # GESTÃO DO PLANO DE CONTAS (EDITAR / EXCLUIR)
+  st.markdown("---")
+  st.subheader("📋 Gestão do Plano de Contas")
+  
+  grupo_gestao = st.selectbox("Selecione o Grupo para Gerir", list(plano_de_contas.keys()), key="select_grupo_gestao")
+  contas_grupo_atual = plano_de_contas.get(grupo_gestao, [])
+  
+  if contas_grupo_atual:
+      for idx_c, conta_str in enumerate(contas_grupo_atual):
+          col_gc1, col_gc2, col_gc3 = st.columns([5, 1, 1])
+          with col_gc1:
+              st.write(f"• {conta_str}")
+          with col_gc2:
+              if st.button("✏️", key=f"edit_c_{grupo_gestao}_{idx_c}"):
+                  st.session_state["editando_conta_grupo"] = grupo_gestao
+                  st.session_state["editando_conta_idx"] = idx_c
+                  st.rerun()
+          with col_gc3:
+              if st.button("🗑️", key=f"del_c_{grupo_gestao}_{idx_c}"):
+                  plano_de_contas[grupo_gestao].pop(idx_c)
+                  st.session_state.plano_de_contas = plano_de_contas
+                  
+                  registos_plano = []
+                  for g, contas in plano_de_contas.items():
+                      for c in contas:
+                          registos_plano.append({"Grupo": g, "Conta": c})
+                  pd.DataFrame(registos_plano).to_csv(ARQUIVO_PLANO, index=False, sep=";")
+                  st.success("Conta excluída com sucesso!")
+                  st.rerun()
+  else:
+      st.info("Nenhuma conta cadastrada neste grupo.")
 
-# Se houver uma conta selecionada para edição, preenchemos o formulário com os dados dela
-index_editando = st.session_state.get("editando_conta_index", None)
+  if "editando_conta_grupo" in st.session_state and st.session_state["editando_conta_grupo"] == grupo_gestao:
+      g_edit = st.session_state["editando_conta_grupo"]
+      i_edit = st.session_state["editando_conta_idx"]
+      if i_edit < len(plano_de_contas[g_edit]):
+          conta_antiga = plano_de_contas[g_edit][i_edit]
+          st.warning(f"A editar a conta: {conta_antiga}")
+          novo_nome_conta = st.text_input("Novo Nome/Código da Conta", value=conta_antiga, key="input_edicao_conta_str")
+          
+          col_se, col_ce = st.columns(2)
+          with col_se:
+              if st.button("Salvar Alteração da Conta"):
+                  plano_de_contas[g_edit][i_edit] = novo_nome_conta
+                  st.session_state.plano_de_contas = plano_de_contas
+                  
+                  registos_plano = []
+                  for g, contas in plano_de_contas.items():
+                      for c in contas:
+                          registos_plano.append({"Grupo": g, "Conta": c})
+                  pd.DataFrame(registos_plano).to_csv(ARQUIVO_PLANO, index=False, sep=";")
+                  
+                  del st.session_state["editando_conta_grupo"]
+                  del st.session_state["editando_conta_idx"]
+                  st.success("Conta atualizada com sucesso!")
+                  st.rerun()
+          with col_ce:
+              if st.button("Cancelar Edição da Conta"):
+                  del st.session_state["editando_conta_grupo"]
+                  del st.session_state["editando_conta_idx"]
+                  st.rerun()
 
-if index_editando is not None:
-    conta_atual = st.session_state["plano_contas"][index_editando]
-    st.warning(f"A editar a conta: {conta_atual.get('nome')}")
-    
-    # Aqui colocas os inputs de texto já com os valores de 'conta_atual'
-    novo_codigo = st.text_input("Novo Código", value=conta_atual.get("codigo", ""))
-    novo_nome = st.text_input("Novo Nome", value=conta_atual.get("nome", ""))
-    
-    if st.button("Salvar Alterações"):
-        st.session_state["plano_contas"][index_editando]["codigo"] = novo_codigo
-        st.session_state["plano_contas"][index_editando]["nome"] = novo_nome
-        del st.session_state["editando_conta_index"]
-        st.success("Conta atualizada com sucesso!")
-        st.rerun()
-        
-    if st.button("Cancelar Edição"):
-        del st.session_state["editando_conta_index"]
-        st.rerun()
+  st.markdown("---")
 
-    if "editando_idx" not in st.session_state:
-        st.session_state.editando_idx = None
+  if "editando_idx" not in st.session_state:
+    st.session_state.editando_idx = None
 
   with st.form("form_partidas_dobradas", clear_on_submit=True):
     col1, col2 = st.columns(2)
@@ -499,57 +514,7 @@ if index_editando is not None:
         st.session_state.editando_idx = idx
     with col_del:
       if st.button("🗑️", key=f"btn_del_{idx}"):
-        if st.session_state.editando_idx == idx:
-          st.session_state.editando_idx = None
-        st.session_state.df_lancamentos = (
-            st.session_state.df_lancamentos.drop(idx).reset_index(drop=True)
-        )
-        st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
-        st.rerun()
-
-  if st.session_state.editando_idx is not None:
-    idx_edit = st.session_state.editando_idx
-    if idx_edit in st.session_state.df_lancamentos.index:
-      row_atual = st.session_state.df_lancamentos.loc[idx_edit]
-      st.markdown(f"### A Editar o Lançamento [{idx_edit}]")
-      with st.form(f"form_editar_{idx_edit}"):
-        col_e1, col_e2 = st.columns(2)
-        with col_e1:
-          nova_data = st.text_input("Data (AAAA-MM-DD)", value=str(row_atual["Data"]))
-          deb_atual = str(row_atual.get("Débito", lista_contas_analiticas[0]))
-          idx_deb = opcoes_selectbox.index(deb_atual) if deb_atual in opcoes_selectbox else 0
-          novo_debito = st.selectbox("Conta a DEBITAR", opcoes_selectbox, index=idx_deb)
-        with col_e2:
-          novo_valor = st.number_input("Valor (R$)", min_value=0.0, value=float(row_atual["Valor"]), format="%.2f", step=10.0)
-          cred_atual = str(row_atual.get("Crédito", lista_contas_analiticas[0]))
-          idx_cred = opcoes_selectbox.index(cred_atual) if cred_atual in opcoes_selectbox else 0
-          novo_credito = st.selectbox("Conta a CREDITAR", opcoes_selectbox, index=idx_cred)
-
-        novo_hist = st.text_input("Histórico / Descrição", value=str(row_atual["Historico"]))
-        col_salv, col_canc = st.columns(2)
-        with col_salv:
-          salvar_edicao = st.form_submit_button("Guardar")
-        with col_canc:
-          cancelar_edicao = st.form_submit_button("Cancelar")
-
-        if salvar_edicao:
-          if novo_debito.startswith("---") or novo_credito.startswith("---"):
-            st.error("Selecione uma conta analítica válida!")
-          elif novo_debito == novo_credito:
-            st.error("Débito e Crédito não podem ser iguais!")
-          else:
-            st.session_state.df_lancamentos.loc[idx_edit, "Data"] = nova_data
-            st.session_state.df_lancamentos.loc[idx_edit, "Historico"] = novo_hist
-            st.session_state.df_lancamentos.loc[idx_edit, "Débito"] = novo_debito
-            st.session_state.df_lancamentos.loc[idx_edit, "Crédito"] = novo_credito
-            st.session_state.df_lancamentos.loc[idx_edit, "Valor"] = novo_valor
-            st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
-            st.session_state.editando_idx = None
-            st.success("Atualizado com sucesso!")
-            st.rerun()
-        if cancelar_edicao:
-          st.session_state.editando_idx = None
-          st.rerun()
+        if st.session_state.editando_id
 
 
 # -------------------------------------------------------------------------
@@ -737,4 +702,5 @@ with aba_demonstracoes:
     st.info(
         f"Não existem movimentos registados para a conta"
         f" {conta_selecionada_razao}."
-    )
+)
+        
