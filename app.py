@@ -434,7 +434,7 @@ with aba_lancamentos:
   else:
       st.info("Nenhuma conta cadastrada neste grupo.")
 
-  if "editando_conta_grupo" in st.session_state and st.session_state["editando_conta_grupo"] == grupo_gestao:
+    if "editando_conta_grupo" in st.session_state and st.session_state["editando_conta_grupo"] == grupo_gestao:
       g_edit = st.session_state["editando_conta_grupo"]
       i_edit = st.session_state["editando_conta_idx"]
       if i_edit < len(plano_de_contas[g_edit]):
@@ -445,6 +445,7 @@ with aba_lancamentos:
           col_se, col_ce = st.columns(2)
           with col_se:
               if st.button("Salvar Alteração da Conta"):
+                  # 1. Atualiza o Plano de Contas
                   plano_de_contas[g_edit][i_edit] = novo_nome_conta
                   st.session_state.plano_de_contas = plano_de_contas
                   
@@ -454,9 +455,18 @@ with aba_lancamentos:
                           registos_plano.append({"Grupo": g, "Conta": c})
                   pd.DataFrame(registos_plano).to_csv(ARQUIVO_PLANO, index=False, sep=";")
                   
+                  # 2. ATUALIZAÇÃO EM CASCATA NO HISTÓRICO DE LANÇAMENTOS (RAZÃO/DIÁRIO)
+                  if "df_lancamentos" in st.session_state and not st.session_state.df_lancamentos.empty:
+                      df_l = st.session_state.df_lancamentos
+                      df_l["Débito"] = df_l["Débito"].replace(conta_antiga, novo_nome_conta)
+                      df_l["Crédito"] = df_l["Crédito"].replace(conta_antiga, novo_nome_conta)
+                      st.session_state.df_lancamentos = df_l
+                      df_l.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
+                  
+                  # 3. Limpa os estados de edição
                   del st.session_state["editando_conta_grupo"]
                   del st.session_state["editando_conta_idx"]
-                  st.success("Conta atualizada com sucesso!")
+                  st.success("Conta e histórico de lançamentos atualizados com sucesso em cascata!")
                   st.rerun()
           with col_ce:
               if st.button("Cancelar Edição da Conta"):
