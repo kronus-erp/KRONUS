@@ -479,17 +479,16 @@ st.markdown("---")
 if "editando_idx" not in st.session_state:
     st.session_state.editando_idx = None
 
-    with st.form("form_partidas_dobradas", clear_on_submit=True):
-    col1, col2 = st.columns(2)
-    with col1:
-      data_lanc = st.date_input("Data do Lançamento")
-      conta_debito = st.selectbox("Conta a DEBITAR", opcoes_selectbox)
-    with col2:
-      valor_mov = st.number_input("Valor (R$)", min_value=0.0, format="%.2f", step=10.0)
-      conta_credito = st.selectbox("Conta a CREDITAR", opcoes_selectbox)
-    historico = st.text_input("Histórico / Descrição")
-    submitted = st.form_submit_button("Lançar Partida Dobrada")
-    if submitted:
+with st.form("form_partidas_dobradas", clear_on_submit=True):
+        col1, col2 = st.columns(2)
+        with col1:
+            data_lanc = st.date_input("Data do Lançamento")
+            conta_debito = st.selectbox("Conta a DEBITAR", opcoes_selectbox)
+        with col2:
+            valor_mov = st.number_input("Valor (R$)", min_value=0.0, format="%.2f", step=10.0)
+            conta_credito = st.selectbox("Conta a CREDITAR", opcoes_selectbox)
+        historico = st.text_input("Histórico / Descrição")
+        submitted = st.form_submit_button("Lançar Partida Dobrada"):
       if conta_debito.startswith("---") or conta_credito.startswith("---"):
         st.error("Selecione uma conta analítica válida!")
       elif conta_debito == conta_credito:
