@@ -798,3 +798,281 @@ with aba_esocial:
         xml_res = gerar_xml_s1200(per_apur, cpf_trab_12, matricula_12, vr_bruto)
         st.success("✅ S-1200 (Remuneração) gerado com sucesso!")
         st.code(xml_res, language="xml")
+
+# -------------------------------------------------------------------------
+# ABA 4: MÓDULO eSOCIAL (S-1000, S-1010, S-2200, S-1200, S-2230 e S-1299)
+# -------------------------------------------------------------------------
+with aba_esocial:
+  st.header("🛡️ Módulo eSocial - Gestão de Eventos XML")
+  st.markdown("Gere e valide os arquivos XML oficiais para o ambiente do eSocial.")
+  
+  sub_esocial_1, sub_esocial_2, sub_esocial_3, sub_esocial_4, sub_esocial_5, sub_esocial_6 = st.tabs([
+      "📄 S-1000 (Empregador)", 
+      "📋 S-1010 (Rubricas)",
+      "👥 S-2200 (Admissão)",
+      "💰 S-1200 (Remuneração)",
+      "🏥 S-2230 (Afastamento)",
+      "🔒 S-1299 (Fechamento)"
+  ])
+
+  # --- SUB-ABA S-1000 ---
+  with sub_esocial_1:
+    st.subheader("Evento S-1000 - Informações do Empregador")
+    
+    def gerar_xml_s1000(tp_amb, tp_insc, nr_insc, class_trib):
+      esocial = ET.Element("eSocial", xmlns="http://www.esocial.gov.br/schema/evt/evtInfoEmpregador/v_S_01_03_00")
+      evt = ET.SubElement(esocial, "evtInfoEmpregador", Id=f"ID{tp_insc}{nr_insc.zfill(14)}2026110412000000001")
+      ide = ET.SubElement(evt, "ideEvento")
+      ET.SubElement(ide, "tpAmb").text = str(tp_amb)
+      ET.SubElement(ide, "procEmi").text = "1"
+      ET.SubElement(ide, "verProc").text = "KRONUS_ERP_v1.0"
+      emp = ET.SubElement(evt, "ideEmpregador")
+      ET.SubElement(emp, "tpInsc").text = str(tp_insc)
+      ET.SubElement(emp, "nrInsc").text = str(nr_insc)
+      info = ET.SubElement(evt, "infoEmpregador")
+      inc = ET.SubElement(info, "inclusao")
+      per = ET.SubElement(inc, "idePeriodo")
+      ET.SubElement(per, "iniValid").text = "2026-01"
+      cad = ET.SubElement(inc, "infoCadastro")
+      ET.SubElement(cad, "classTrib").text = str(class_trib)
+      ET.SubElement(cad, "indCoop").text = "0"
+      ET.SubElement(cad, "indConstr").text = "0"
+      ET.SubElement(cad, "indDesoneracao").text = "0"
+      ET.SubElement(cad, "indOptRegEletron").text = "1"
+      return minidom.parseString(ET.tostring(esocial)).toprettyxml(indent="  ")
+
+    with st.form("form_s1000_f"):
+      c1, c2, c3 = st.columns(3)
+      with c1: tp_amb = st.selectbox("Ambiente", ["2 - Testes", "1 - Produção"], key="s1000_amb_f")
+      with c2: tp_insc = st.selectbox("Tipo Inscrição", ["1 - CNPJ", "2 - CPF"], key="s1000_tpinsc_f")
+      with c3: nr_insc = st.text_input("CNPJ/CPF", "00000000000100", key="s1000_nrinsc_f")
+      class_trib = st.selectbox("Classificação Tributária", ["01 - Simples Nacional", "99 - Geral"], key="s1000_classtrib_f")
+      
+      if st.form_submit_button("⚙️ Gerar XML S-1000"):
+        xml_res = gerar_xml_s1000(2 if "2" in tp_amb else 1, 1 if "1" in tp_insc else 2, nr_insc, class_trib.split(" - ")[0])
+        st.success("✅ S-1000 gerado com sucesso!")
+        st.code(xml_res, language="xml")
+
+  # --- SUB-ABA S-1010 ---
+  with sub_esocial_2:
+    st.subheader("Evento S-1010 - Tabela de Rubricas")
+    def gerar_xml_s1010(cod, desc, nat, tp):
+      esocial = ET.Element("eSocial", xmlns="http://www.esocial.gov.br/schema/evt/evtTabelaRubrica/v_S_01_03_00")
+      evt = ET.SubElement(esocial, "evtTabelaRubrica", Id="ID1000000002026110412000000001")
+      ide = ET.SubElement(evt, "ideEvento")
+      ET.SubElement(ide, "tpAmb").text = "2"
+      ET.SubElement(ide, "procEmi").text = "1"
+      ET.SubElement(ide, "verProc").text = "KRONUS_ERP_v1.0"
+      emp = ET.SubElement(evt, "ideEmpregador")
+      ET.SubElement(emp, "tpInsc").text = "1"
+      ET.SubElement(emp, "nrInsc").text = "00000000000100"
+      info = ET.SubElement(evt, "infoRubrica")
+      inc = ET.SubElement(info, "inclusao")
+      irub = ET.SubElement(inc, "ideRubrica")
+      ET.SubElement(irub, "codRubr").text = cod
+      ET.SubElement(irub, "ideTabRubr").text = "TAB01"
+      ET.SubElement(irub, "iniValid").text = "2026-01"
+      drub = ET.SubElement(inc, "dadosRubrica")
+      ET.SubElement(drub, "dscRubr").text = desc
+      ET.SubElement(drub, "natRubr").text = nat
+      ET.SubElement(drub, "tpRubr").text = tp
+      ET.SubElement(drub, "codIncCP").text = "11"
+      ET.SubElement(drub, "codIncIRRF").text = "11"
+      ET.SubElement(drub, "codIncFGTS").text = "11"
+      return minidom.parseString(ET.tostring(esocial)).toprettyxml(indent="  ")
+
+    with st.form("form_s1010_f"):
+      c1, c2 = st.columns(2)
+      with c1:
+        cod_r = st.text_input("Código da Rubrica", "1001")
+        desc_r = st.text_input("Descrição", "Salário Mensal")
+      with c2:
+        nat_r = st.text_input("Natureza (Ex: 1010)", "1010")
+        tp_r = st.selectbox("Tipo", ["1 - Provento", "2 - Desconto"])
+      
+      if st.form_submit_button("⚙️ Gerar XML S-1010"):
+        xml_res = gerar_xml_s1010(cod_r, desc_r, nat_r, tp_r.split(" - ")[0])
+        st.success("✅ S-1010 gerado com sucesso!")
+        st.code(xml_res, language="xml")
+
+  # --- SUB-ABA S-2200 (ADMISSÃO) ---
+  with sub_esocial_3:
+    st.subheader("Evento S-2200 - Cadastramento Inicial / Admissão de Trabalhador")
+    def gerar_xml_s2200(cpf, nome, dt_adm, matricula, cargo, salario):
+      esocial = ET.Element("eSocial", xmlns="http://www.esocial.gov.br/schema/evt/evtAdmissao/v_S_01_03_00")
+      evt = ET.SubElement(esocial, "evtAdmissao", Id="ID1000000002026110412000000001")
+      ide = ET.SubElement(evt, "ideEvento")
+      ET.SubElement(ide, "tpAmb").text = "2"
+      ET.SubElement(ide, "procEmi").text = "1"
+      ET.SubElement(ide, "verProc").text = "KRONUS_ERP_v1.0"
+      emp = ET.SubElement(evt, "ideEmpregador")
+      ET.SubElement(emp, "tpInsc").text = "1"
+      ET.SubElement(emp, "nrInsc").text = "00000000000100"
+      
+      trabalhador = ET.SubElement(evt, "trab")
+      ET.SubElement(trabalhador, "cpfTrab").text = cpf
+      ET.SubElement(trabalhador, "nmTrab").text = nome
+      
+      vinculo = ET.SubElement(evt, "vinculo")
+      ET.SubElement(vinculo, "matricula").text = matricula
+      ET.SubElement(vinculo, "dtAdm").text = str(dt_adm)
+      
+      contrato = ET.SubElement(vinculo, "infoContrato")
+      ET.SubElement(contrato, "nmCargo").text = cargo
+      remun = ET.SubElement(contrato, "remuneracao")
+      ET.SubElement(remun, "vrSalFx").text = f"{salario:.2f}"
+      ET.SubElement(remun, "undSalFixo").text = "5"
+
+      return minidom.parseString(ET.tostring(esocial)).toprettyxml(indent="  ")
+
+    with st.form("form_s2200_f"):
+      c1, c2 = st.columns(2)
+      with c1:
+        cpf_trab = st.text_input("CPF do Trabalhador", "00000000000")
+        nome_trab = st.text_input("Nome Completo", "João da Silva")
+        dt_adm = st.date_input("Data de Admissão")
+      with c2:
+        matricula = st.text_input("Matrícula", "001")
+        cargo = st.text_input("Cargo", "Assistente Contábil")
+        salario = st.number_input("Salário Base (R$)", min_value=0.0, value=2500.00, format="%.2f")
+
+      if st.form_submit_button("⚙️ Gerar XML S-2200 (Admissão)"):
+        xml_res = gerar_xml_s2200(cpf_trab, nome_trab, dt_adm, matricula, cargo, salario)
+        st.success("✅ S-2200 (Admissão) gerado com sucesso!")
+        st.code(xml_res, language="xml")
+
+  # --- SUB-ABA S-1200 (REMUNERAÇÃO) ---
+  with sub_esocial_4:
+    st.subheader("Evento S-1200 - Remuneração do Trabalhador")
+    def gerar_xml_s1200(per_apur, cpf_trab, matricula, vr_bruto):
+      esocial = ET.Element("eSocial", xmlns="http://www.esocial.gov.br/schema/evt/evtRemun/v_S_01_03_00")
+      evt = ET.SubElement(esocial, "evtRemun", Id="ID1000000002026110412000000001")
+      ide = ET.SubElement(evt, "ideEvento")
+      ET.SubElement(ide, "indApuracao").text = "1"
+      ET.SubElement(ide, "perApur").text = per_apur
+      ET.SubElement(ide, "tpAmb").text = "2"
+      ET.SubElement(ide, "procEmi").text = "1"
+      ET.SubElement(ide, "verProc").text = "KRONUS_ERP_v1.0"
+      
+      emp = ET.SubElement(evt, "ideEmpregador")
+      ET.SubElement(emp, "tpInsc").text = "1"
+      ET.SubElement(emp, "nrInsc").text = "00000000000100"
+      
+      dm_Dev = ET.SubElement(evt, "dmDev")
+      ET.SubElement(dm_Dev, "ideDmDev").text = "D1"
+      ET.SubElement(dm_Dev, "codCateg").text = "101"
+      
+      info_per_apur = ET.SubElement(dm_Dev, "infoPerApur")
+      ident_trab = ET.SubElement(info_per_apur, "ideTrabSemVinc")
+      ET.SubElement(ident_trab, "cpfTrab").text = cpf_trab
+      
+      itens = ET.SubElement(ident_trab, "remunPerApur")
+      ET.SubElement(itens, "matricula").text = matricula
+      
+      itens_rubrica = ET.SubElement(itens, "itensRemun")
+      ET.SubElement(itens_rubrica, "codRubr").text = "1001"
+      ET.SubElement(itens_rubrica, "ideTabRubr").text = "TAB01"
+      ET.SubElement(itens_rubrica, "vrRubr").text = f"{vr_bruto:.2f}"
+
+      return minidom.parseString(ET.tostring(esocial)).toprettyxml(indent="  ")
+
+    with st.form("form_s1200_f"):
+      c1, c2 = st.columns(2)
+      with c1:
+        per_apur = st.text_input("Período de Apuração (AAAA-MM)", "2026-11")
+        cpf_trab_12 = st.text_input("CPF do Trabalhador", "00000000000", key="s1200_cpf")
+      with c2:
+        matricula_12 = st.text_input("Matrícula", "001", key="s1200_mat")
+        vr_bruto = st.number_input("Valor Bruto (R$)", min_value=0.0, value=2500.00, format="%.2f")
+
+      if st.form_submit_button("⚙️ Gerar XML S-1200"):
+        xml_res = gerar_xml_s1200(per_apur, cpf_trab_12, matricula_12, vr_bruto)
+        st.success("✅ S-1200 gerado com sucesso!")
+        st.code(xml_res, language="xml")
+
+  # --- SUB-ABA S-2230 (AFASTAMENTO TEMPORÁRIO) ---
+  with sub_esocial_5:
+    st.subheader("Evento S-2230 - Afastamento Temporário")
+    def gerar_xml_s2230(cpf, matricula, dt_inicio, cod_motivo):
+      esocial = ET.Element("eSocial", xmlns="http://www.esocial.gov.br/schema/evt/evtAfastTemp/v_S_01_03_00")
+      evt = ET.SubElement(esocial, "evtAfastTemp", Id="ID1000000002026110412000000001")
+      ide = ET.SubElement(evt, "ideEvento")
+      ET.SubElement(ide, "tpAmb").text = "2"
+      ET.SubElement(ide, "procEmi").text = "1"
+      ET.SubElement(ide, "verProc").text = "KRONUS_ERP_v1.0"
+      
+      emp = ET.SubElement(evt, "ideEmpregador")
+      ET.SubElement(emp, "tpInsc").text = "1"
+      ET.SubElement(emp, "nrInsc").text = "00000000000100"
+      
+      afastamento = ET.SubElement(evt, "ideVinculo")
+      ET.SubElement(afastamento, "cpfTrab").text = cpf
+      ET.SubElement(afastamento, "matricula").text = matricula
+      
+      ini_afast = ET.SubElement(evt, "iniAfastamento")
+      ET.SubElement(ini_afast, "dtIniAfast").text = str(dt_inicio)
+      ET.SubElement(ini_afast, "codMotAfast").text = cod_motivo
+
+      return minidom.parseString(ET.tostring(esocial)).toprettyxml(indent="  ")
+
+    with st.form("form_s2230_f"):
+      c1, c2 = st.columns(2)
+      with c1:
+        cpf_afast = st.text_input("CPF do Trabalhador", "00000000000", key="s2230_cpf")
+        mat_afast = st.text_input("Matrícula", "001", key="s2230_mat")
+      with c2:
+        dt_ini_afast = st.date_input("Data de Início do Afastamento", key="s2230_dt")
+        motivo_afast = st.selectbox("Motivo do Afastamento", [
+            "01 - Acidente/Doença do Trabalho", 
+            "03 - Doença (não relacionada ao trabalho)", 
+            "15 - Férias",
+            "35 - Licença Maternidade"
+        ], key="s2230_motivo")
+
+      if st.form_submit_button("⚙️ Gerar XML S-2230 (Afastamento)"):
+        cod_mot_val = motivo_afast.split(" - ")[0]
+        xml_res = gerar_xml_s2230(cpf_afast, mat_afast, dt_ini_afast, cod_mot_val)
+        st.success("✅ S-2230 (Afastamento) gerado com sucesso!")
+        st.code(xml_res, language="xml")
+
+  # --- SUB-ABA S-1299 (FECHAMENTO DOS EVENTOS PERIÓDICOS) ---
+  with sub_esocial_6:
+    st.subheader("Evento S-1299 - Fechamento dos Eventos Periódicos")
+    st.markdown("Encerra a transmissão da folha do mês para apuração de impostos e DCTFWeb.")
+
+    def gerar_xml_s1299(per_apur, evt_remun, evt_pagto, comp_deson):
+      esocial = ET.Element("eSocial", xmlns="http://www.esocial.gov.br/schema/evt/evtFechEvPer/v_S_01_03_00")
+      evt = ET.SubElement(esocial, "evtFechEvPer", Id="ID1000000002026110412000000001")
+      ide = ET.SubElement(evt, "ideEvento")
+      ET.SubElement(ide, "indApuracao").text = "1"
+      ET.SubElement(ide, "perApur").text = per_apur
+      ET.SubElement(ide, "tpAmb").text = "2"
+      ET.SubElement(ide, "procEmi").text = "1"
+      ET.SubElement(ide, "verProc").text = "KRONUS_ERP_v1.0"
+      
+      emp = ET.SubElement(evt, "ideEmpregador")
+      ET.SubElement(emp, "tpInsc").text = "1"
+      ET.SubElement(emp, "nrInsc").text = "00000000000100"
+      
+      info_fech = ET.SubElement(evt, "infoFech")
+      ET.SubElement(info_fech, "evtRemun").text = "S" if evt_remun else "N"
+      ET.SubElement(info_fech, "evtPgtos").text = "S" if evt_pagto else "N"
+      ET.SubElement(info_fech, "compDeson").text = "S" if comp_deson else "N"
+      ET.SubElement(info_fech, "indExigIsencao").text = "N"
+
+      return minidom.parseString(ET.tostring(esocial)).toprettyxml(indent="  ")
+
+    with st.form("form_s1299_f"):
+      c1, c2 = st.columns(2)
+      with c1:
+        per_apur_1299 = st.text_input("Período de Apuração (AAAA-MM)", "2026-11", key="s1299_per")
+        has_remun = st.checkbox("Possui Informações de Remuneração (S-1200)?", value=True)
+      with c2:
+        has_pagto = st.checkbox("Possui Informações de Pagamento (S-1210)?", value=True)
+        has_deson = st.checkbox("Possui Desoneração da Folha (CPRB)?", value=False)
+
+      if st.form_submit_button("⚙️ Gerar XML S-1299 (Fechamento)"):
+        xml_res = gerar_xml_s1299(per_apur_1299, has_remun, has_pagto, has_deson)
+        st.success("✅ S-1299 (Fechamento) gerado com sucesso!")
+        st.code(xml_res, language="xml")
+        
