@@ -360,7 +360,7 @@ with aba_empresa:
 
 
 # -------------------------------------------------------------------------
-# ABA 2: LANÇAMENTOS & DIÁRIO
+# ABA 2: LANÇAMENTOS & DIÁRIO (COM SUPORTE A MÚLTIPLAS PARTIDAS DOBRADAS)
 # -------------------------------------------------------------------------
 with aba_lancamentos:
   st.header("Módulo de Lançamentos (Partidas Dobradas)")
@@ -422,154 +422,135 @@ with aba_lancamentos:
   else:
       st.info("Nenhuma conta cadastrada neste grupo.")
 
-  if "editando_conta_grupo" in st.session_state and st.session_state["editando_conta_grupo"] == grupo_gestao:
-      g_edit = st.session_state["editando_conta_grupo"]
-      i_edit = st.session_state["editando_conta_idx"]
-      if i_edit < len(plano_de_contas[g_edit]):
-          conta_antiga = plano_de_contas[g_edit][i_edit]
-          st.warning(f"A editar a conta: {conta_antiga}")
-          novo_nome_conta = st.text_input("Novo Nome/Código da Conta", value=conta_antiga, key="input_edicao_conta_str")
-          
-          col_se, col_ce = st.columns(2)
-          with col_se:
-              if st.button("Salvar Alteração da Conta", key="btn_salvar_alt_conta"):
-                  plano_de_contas[g_edit][i_edit] = novo_nome_conta
-                  st.session_state.plano_de_contas = plano_de_contas
-                  
-                  registos_plano = []
-                  for g, contas in plano_de_contas.items():
-                      for c in contas:
-                          registos_plano.append({"Grupo": g, "Conta": c})
-                  pd.DataFrame(registos_plano).to_csv(ARQUIVO_PLANO, index=False, sep=";")
-                  
-                  if "df_lancamentos" in st.session_state and not st.session_state.df_lancamentos.empty:
-                      df_l = st.session_state.df_lancamentos
-                      df_l["Débito"] = df_l["Débito"].replace(conta_antiga, novo_nome_conta)
-                      df_l["Crédito"] = df_l["Crédito"].replace(conta_antiga, novo_nome_conta)
-                      st.session_state.df_lancamentos = df_l
-                      df_l.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
-                  
-                  del st.session_state["editando_conta_grupo"]
-                  del st.session_state["editando_conta_idx"]
-                  st.success("Conta e histórico atualizados em cascata!")
-                  st.rerun()
-          with col_ce:
-              if st.button("Cancelar Edição da Conta", key="btn_canc_alt_conta"):
-                  del st.session_state["editando_conta_grupo"]
-                  del st.session_state["editando_conta_idx"]
-                  st.rerun()
-
   st.markdown("---")
 
-  if "editando_idx" not in st.session_state:
-    st.session_state.editando_idx = None
+  # Novo seletor de tipo de lançamento (Simples ou Múltiplo)
+  tipo_lancamento = st.radio(
+      "Formato do Lançamento:",
+      ["Simples (1 Débito / 1 Crédito)", "Múltiplo / Composto (Múltiplos Débitos e/ou Créditos)"],
+      horizontal=True,
+      key="radio_tipo_lancamento"
+  )
 
-  if st.session_state.editando_idx is not None:
-    idx_edit = st.session_state.editando_idx
-    if idx_edit in st.session_state.df_lancamentos.index:
-      row_edit = st.session_state.df_lancamentos.loc[idx_edit]
-      st.warning(f"✏️ **Editando o Lançamento ID/Índice #{idx_edit}**")
+  if tipo_lancamento == "Simples (1 Débito / 1 Crédito)":
+    st.subheader("➕ Novo Lançamento Simples (Partida Dobrada)")
+    with st.form("form_partidas_dobradas_simples", clear_on_submit=True):
+      col1, col2 = st.columns(2)
+      with col1:
+        data_lanc = st.date_input("Data do Lançamento", key="novo_data_lanc")
+        conta_debito = st.selectbox("Conta a DEBITAR", opcoes_selectbox, key="novo_conta_deb")
+      with col2:
+        valor_mov = st.number_input("Valor (R$)", min_value=0.0, format="%.2f", step=10.0, key="novo_valor_mov")
+        conta_credito = st.selectbox("Conta a CREDITAR", opcoes_selectbox, key="novo_conta_cred")
+      historico = st.text_input("Histórico / Descrição", key="novo_historico")
+      submitted = st.form_submit_button("Lançar Partida Simples")
       
-      with st.form("form_edicao_lancamento"):
-        col1_e, col2_e = st.columns(2)
-        with col1_e:
-          try:
-            data_val = pd.to_datetime(row_edit["Data"]).date()
-          except:
-            data_val = pd.to_datetime("today").date()
-          data_lanc_e = st.date_input("Data do Lançamento", value=data_val, key="edit_data_lanc")
-          
-          idx_deb = opcoes_selectbox.index(row_edit["Débito"]) if row_edit["Débito"] in opcoes_selectbox else 0
-          conta_debito_e = st.selectbox("Conta a DEBITAR", opcoes_selectbox, index=idx_deb, key="edit_deb_conta")
-        
-        with col2_e:
-          valor_mov_e = st.number_input("Valor (R$)", min_value=0.0, value=float(row_edit["Valor"]), format="%.2f", step=10.0, key="edit_val_mov")
-          idx_cred = opcoes_selectbox.index(row_edit["Crédito"]) if row_edit["Crédito"] in opcoes_selectbox else 0
-          conta_credito_e = st.selectbox("Conta a CREDITAR", opcoes_selectbox, index=idx_cred, key="edit_cred_conta")
-        
-        historico_e = st.text_input("Histórico / Descrição", value=str(row_edit["Historico"]), key="edit_hist_desc")
-        
-        col_btn_salvar, col_btn_cancelar = st.columns(2)
-        with col_btn_salvar:
-          sub_salvar = st.form_submit_button("💾 Salvar Alterações")
-        with col_btn_cancelar:
-          sub_cancelar = st.form_submit_button("❌ Cancelar Edição")
-          
-        if sub_salvar:
-          if conta_debito_e.startswith("---") or conta_credito_e.startswith("---"):
-            st.error("Selecione uma conta analítica válida!")
-          elif conta_debito_e == conta_credito_e:
-            st.error("Débito e Crédito não podem ser iguais!")
-          else:
-            st.session_state.df_lancamentos.loc[idx_edit, "Data"] = str(data_lanc_e)
-            st.session_state.df_lancamentos.loc[idx_edit, "Historico"] = historico_e
-            st.session_state.df_lancamentos.loc[idx_edit, "Débito"] = conta_debito_e
-            st.session_state.df_lancamentos.loc[idx_edit, "Crédito"] = conta_credito_e
-            st.session_state.df_lancamentos.loc[idx_edit, "Valor"] = valor_mov_e
-            
-            st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
-            st.session_state.editando_idx = None
-            st.success("Lançamento atualizado com sucesso!")
-            st.rerun()
-            
-        if sub_cancelar:
-          st.session_state.editando_idx = None
+      if submitted:
+        if conta_debito.startswith("---") or conta_credito.startswith("---"):
+          st.error("Selecione uma conta analítica válida!")
+        elif conta_debito == conta_credito:
+          st.error("Débito e Crédito não podem ser iguais!")
+        else:
+          novo_id = int(st.session_state.df_lancamentos["ID"].max() + 1) if not st.session_state.df_lancamentos.empty and "ID" in st.session_state.df_lancamentos.columns else 1
+          novo_registo = pd.DataFrame([{
+              "ID": novo_id,
+              "Data": str(data_lanc),
+              "Historico": historico,
+              "Débito": conta_debito,
+              "Crédito": conta_credito,
+              "Valor": valor_mov,
+          }])
+          st.session_state.df_lancamentos = pd.concat(
+              [st.session_state.df_lancamentos, novo_registo], ignore_index=True
+          )
+          st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
+          st.success("Lançamento efetuado com sucesso!")
           st.rerun()
 
-  st.subheader("➕ Novo Lançamento de Partida Dobrada")
-  with st.form("form_partidas_dobradas", clear_on_submit=True):
-    col1, col2 = st.columns(2)
-    with col1:
-      data_lanc = st.date_input("Data do Lançamento", key="novo_data_lanc")
-      conta_debito = st.selectbox("Conta a DEBITAR", opcoes_selectbox, key="novo_conta_deb")
-    with col2:
-      valor_mov = st.number_input("Valor (R$)", min_value=0.0, format="%.2f", step=10.0, key="novo_valor_mov")
-      conta_credito = st.selectbox("Conta a CREDITAR", opcoes_selectbox, key="novo_conta_cred")
-    historico = st.text_input("Histórico / Descrição", key="novo_historico")
-    submitted = st.form_submit_button("Lançar Partida Dobrada")
+  else:
+    st.subheader("➕ Novo Lançamento Múltiplo / Composto")
+    st.markdown("Insira múltiplos débitos e créditos. A soma total dos débitos deve ser igual à soma total dos créditos.")
     
-    if submitted:
-      if conta_debito.startswith("---") or conta_credito.startswith("---"):
-        st.error("Selecione uma conta analítica válida!")
-      elif conta_debito == conta_credito:
-        st.error("Débito e Crédito não podem ser iguais!")
-      else:
-        novo_id = int(st.session_state.df_lancamentos["ID"].max() + 1) if not st.session_state.df_lancamentos.empty and "ID" in st.session_state.df_lancamentos.columns else 1
-        novo_registo = pd.DataFrame([{
-            "ID": novo_id,
-            "Data": str(data_lanc),
-            "Historico": historico,
-            "Débito": conta_debito,
-            "Crédito": conta_credito,
-            "Valor": valor_mov,
-        }])
-        st.session_state.df_lancamentos = pd.concat(
-            [st.session_state.df_lancamentos, novo_registo], ignore_index=True
-        )
-        st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
-        st.success("Lançamento efetuado!")
-        st.rerun()
+    with st.form("form_partidas_dobradas_multiplo", clear_on_submit=True):
+      data_lanc_m = st.date_input("Data do Lançamento", key="mult_data_lanc")
+      historico_m = st.text_input("Histórico / Descrição Geral", key="mult_historico")
+      
+      col_m1, col_m2 = st.columns(2)
+      with col_m1:
+        st.markdown("##### 🟢 Contas a DEBITAR")
+        deb_1_conta = st.selectbox("1º Débito - Conta", opcoes_selectbox, key="mult_d1_conta")
+        deb_1_val = st.number_input("1º Débito - Valor (R$)", min_value=0.0, format="%.2f", key="mult_d1_val")
+        
+        deb_2_conta = st.selectbox("2º Débito - Conta (Opcional)", ["Nenhum"] + opcoes_selectbox, key="mult_d2_conta")
+        deb_2_val = st.number_input("2º Débito - Valor (R$)", min_value=0.0, format="%.2f", key="mult_d2_val")
+
+      with col_m2:
+        st.markdown("##### 🔴 Contas a CREDITAR")
+        cred_1_conta = st.selectbox("1º Crédito - Conta", opcoes_selectbox, key="mult_c1_conta")
+        cred_1_val = st.number_input("1º Crédito - Valor (R$)", min_value=0.0, format="%.2f", key="mult_c1_val")
+        
+        cred_2_conta = st.selectbox("2º Crédito - Conta (Opcional)", ["Nenhum"] + opcoes_selectbox, key="mult_c2_conta")
+        cred_2_val = st.number_input("2º Crédito - Valor (R$)", min_value=0.0, format="%.2f", key="mult_c2_val")
+
+      submitted_multi = st.form_submit_button("Lançar Partidas Múltiplas")
+      
+      if submitted_multi:
+        total_debitos_m = deb_1_val + (deb_2_val if deb_2_conta != "Nenhum" and deb_2_val > 0 else 0.0)
+        total_creditos_m = cred_1_val + (cred_2_val if cred_2_conta != "Nenhum" and cred_2_val > 0 else 0.0)
+        
+        if abs(total_debitos_m - total_creditos_m) > 0.01:
+          st.error(f"⚠️ Erro de Partidas Dobradas: Total de Débitos (R$ {total_debitos_m:.2f}) difere do Total de Créditos (R$ {total_creditos_m:.2f})!")
+        else:
+          novas_linhas = []
+          id_base = int(st.session_state.df_lancamentos["ID"].max() + 1) if not st.session_state.df_lancamentos.empty and "ID" in st.session_state.df_lancamentos.columns else 1
+          
+          # Adiciona 1º débito com 1º crédito proporcional ou direto
+          if deb_1_val > 0 and not deb_1_conta.startswith("---"):
+            novas_linhas.append({
+                "ID": id_base,
+                "Data": str(data_lanc_m),
+                "Historico": historico_m,
+                "Débito": deb_1_conta,
+                "Crédito": cred_1_conta,
+                "Valor": deb_1_val,
+            })
+            id_base += 1
+            
+          if deb_2_conta != "Nenhum" and deb_2_val > 0 and not deb_2_conta.startswith("---"):
+            novas_linhas.append({
+                "ID": id_base,
+                "Data": str(data_lanc_m),
+                "Historico": historico_m + " (Desdobro)",
+                "Débito": deb_2_conta,
+                "Crédito": cred_2_conta if cred_2_conta != "Nenhum" else cred_1_conta,
+                "Valor": deb_2_val,
+            })
+
+          if novas_linhas:
+            df_novo_lote = pd.DataFrame(novas_linhas)
+            st.session_state.df_lancamentos = pd.concat(
+                [st.session_state.df_lancamentos, df_novo_lote], ignore_index=True
+            )
+            st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
+            st.success("Lançamento múltiplo efetuado com sucesso!")
+            st.rerun()
+          else:
+            st.error("Preencha contas analíticas válidas e valores maiores que zero.")
 
   st.markdown("---")
   st.subheader("Gestão e Listagem de Lançamentos")
   for idx, row in st.session_state.df_lancamentos.iterrows():
-    col_info, col_edit, col_del = st.columns([4, 1, 1])
+    col_info, col_del = st.columns([5, 1])
     with col_info:
       st.markdown(
           f"**[{idx}] {row['Data']}** | {row['Historico']} | **D:**"
           f" {row.get('Débito')} | **C:** {row.get('Crédito')} | **R$"
           f" {row['Valor']:.2f}**"
       )
-    with col_edit:
-      if st.button("✏️", key=f"btn_edit_{idx}"):
-        st.session_state.editando_idx = idx
-        st.rerun()
     with col_del:
       if st.button("🗑️", key=f"btn_del_{idx}"):
         st.session_state.df_lancamentos = st.session_state.df_lancamentos.drop(idx).reset_index(drop=True)
         st.session_state.df_lancamentos.to_csv(ARQUIVO_RAZAO, index=False, sep=";")
-        if st.session_state.editando_idx == idx:
-            st.session_state.editando_idx = None
         st.success("Lançamento excluído com sucesso!")
         st.rerun()
 
