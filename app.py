@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Estilização CSS Moderna - Padrão Corporativo Kronus (Preto, Branco e Azul Claro Neon)
+# Estilização CSS Avançada - Padrão Corporativo Kronus (Preto, Branco e Azul Claro Neon)
 st.markdown("""
 <style>
     .stApp {
@@ -19,10 +19,66 @@ st.markdown("""
         color: #ffffff;
         font-family: 'Inter', sans-serif;
     }
-    h1, h2, h3, h4, h5, h6 {
+    
+    /* Títulos elegantes */
+    h1 {
+        color: #f8fafc !important;
+        font-family: 'Inter', sans-serif;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        font-size: 2.2rem !important;
+    }
+    h2, h3, h4, h5, h6 {
         color: #f8fafc !important;
         font-weight: 700;
     }
+
+    /* Ícone Tecnológico Azul Único para Títulos */
+    .tech-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 1rem;
+    }
+    .tech-icon {
+        width: 36px;
+        height: 36px;
+        background: rgba(56, 189, 248, 0.1);
+        border: 1px solid #38bdf8;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #38bdf8;
+        font-size: 1.2rem;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+    }
+
+    /* Logo KRONUS na Sidebar */
+    .kronus-logo-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+    }
+    .kronus-logo-badge {
+        background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+        color: #ffffff;
+        font-weight: 900;
+        font-size: 1.1rem;
+        padding: 6px 10px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+        letter-spacing: 0.05em;
+    }
+    .kronus-logo-text {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: 0.05em;
+    }
+
+    /* Cards de Métricas */
     .metric-card {
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         border: 1px solid #38bdf8;
@@ -44,6 +100,8 @@ st.markdown("""
         font-weight: 700;
         margin-top: 4px;
     }
+
+    /* Botões */
     .stButton > button {
         background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
         color: #ffffff;
@@ -59,6 +117,8 @@ st.markdown("""
         box-shadow: 0 6px 15px rgba(56, 189, 248, 0.5);
         transform: translateY(-1px);
     }
+
+    /* Sidebar */
     [data-testid="stSidebar"] {
         background-color: #020617;
         border-right: 1px solid #1e293b;
@@ -72,7 +132,6 @@ FILE_RAZAO = "razao_analitico_caixa.csv"
 FILE_EMPRESA = "cadastro_empresa.csv"
 
 def init_csvs():
-    # Força a recriação segura dos CSVs se não existirem ou estiverem vazios/corrompidos
     try:
         if not os.path.exists(FILE_PLANO) or os.path.getsize(FILE_PLANO) == 0:
             raise Exception()
@@ -106,13 +165,19 @@ def init_csvs():
 
 init_csvs()
 
-# Carregar Dados com segurança
+# Carregar Dados
 df_plano = pd.read_csv(FILE_PLANO)
 df_razao = pd.read_csv(FILE_RAZAO)
 
-# Menu Lateral (Navegação)
-st.sidebar.markdown("## ⚙️ **KRONUS ERP**")
+# Menu Lateral com Logo KRONUS
+st.sidebar.markdown("""
+    <div class="kronus-logo-container">
+        <div class="kronus-logo-badge">K</div>
+        <div class="kronus-logo-text">KRONUS ERP</div>
+    </div>
+""", unsafe_allow_html=True)
 st.sidebar.markdown("---")
+
 modulo = st.sidebar.selectbox("Navegação Principal", [
     "Dashboard Executivo",
     "Plano de Contas",
@@ -128,7 +193,12 @@ st.sidebar.info("Ambiente corporativo ativo com persistência em CSV.")
 # MÓDULO 1: DASHBOARD EXECUTIVO
 # -------------------------------------------------------------
 if modulo == "Dashboard Executivo":
-    st.markdown("# 📊 Dashboard Executivo")
+    st.markdown("""
+        <div class="tech-header">
+            <div class="tech-icon">📊</div>
+            <h1>Dashboard Executivo</h1>
+        </div>
+    """, unsafe_allow_html=True)
     st.markdown("Visão geral dos principais indicadores contábeis e operacionais da organização.")
     
     col1, col2, col3, col4 = st.columns(4)
@@ -172,14 +242,24 @@ if modulo == "Dashboard Executivo":
 # MÓDULO 2: PLANO DE CONTAS
 # -------------------------------------------------------------
 elif modulo == "Plano de Contas":
-    st.markdown("# 🗂️ Plano de Contas")
+    st.markdown("""
+        <div class="tech-header">
+            <div class="tech-icon">🗂️</div>
+            <h1>Plano de Contas</h1>
+        </div>
+    """, unsafe_allow_html=True)
     st.dataframe(df_plano, use_container_width=True)
 
 # -------------------------------------------------------------
 # MÓDULO 3: LANÇAMENTOS CONTÁBEIS
 # -------------------------------------------------------------
 elif modulo == "Lançamentos Contábeis":
-    st.markdown("# ✍️ Motor de Lançamentos Contábeis")
+    st.markdown("""
+        <div class="tech-header">
+            <div class="tech-icon">✍️</div>
+            <h1>Motor Contábil</h1>
+        </div>
+    """, unsafe_allow_html=True)
     
     st.markdown("### ➕ Novo Lançamento Múltiplo / Composto")
     with st.form("form_lancamento"):
@@ -231,7 +311,12 @@ elif modulo == "Lançamentos Contábeis":
 # MÓDULO 4: DEMONSTRAÇÕES CONTÁBEIS
 # -------------------------------------------------------------
 elif modulo == "Demonstrações (Balanço / DRE)":
-    st.markdown("# 📈 Demonstrações Contábeis Oficiais")
+    st.markdown("""
+        <div class="tech-header">
+            <div class="tech-icon">📈</div>
+            <h1>Demonstrações Contábeis</h1>
+        </div>
+    """, unsafe_allow_html=True)
     st.markdown("Acompanhamento estruturado do Balanço Patrimonial e DRE.")
     
     tab_dre, tab_bp = st.tabs(["DRE - Demonstração do Resultado", "Balanço Patrimonial"])
@@ -265,7 +350,12 @@ elif modulo == "Demonstrações (Balanço / DRE)":
 # MÓDULO 5: eSOCIAL
 # -------------------------------------------------------------
 elif modulo == "Módulo eSocial":
-    st.markdown("# 🏢 Gestão de Eventos eSocial")
+    st.markdown("""
+        <div class="tech-header">
+            <div class="tech-icon">🏢</div>
+            <h1>Módulo eSocial</h1>
+        </div>
+    """, unsafe_allow_html=True)
     st.markdown("Geração e validação de pacotes XML para envio integrado.")
     
     sub_esocial = st.selectbox("Selecione o Evento eSocial", [
