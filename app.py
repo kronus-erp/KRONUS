@@ -574,39 +574,167 @@ with aba_lancamentos:
 
 
 # -------------------------------------------------------------------------
-# ABA 3: DEMONSTRAÇÕES CONTÁBEIS & LIVROS OFICIAIS
+# ABA 3: DEMONSTRAÇÕES CONTÁBEIS & RELATÓRIOS OFICIAIS
 # -------------------------------------------------------------------------
 with aba_demonstracoes:
-  st.header("Demonstrações Contábeis Oficiais")
-  st.markdown("Relatórios financeiros gerados em conformidade com a legislação e ITG 1000.")
+  st.header("📊 Demonstrações Contábeis e Relatórios Avançados")
+  st.markdown("Relatórios financeiros gerados em conformidade com a legislação societária e ITG 1000.")
 
-  st.subheader("1. Balanço Patrimonial")
-  st.markdown("##### ATIVO")
-  st.markdown("###### Ativo Circulante")
-  df_ac, tot_ac = calcular_secao("--- ATIVO CIRCULANTE ---", "ativo")
-  st.dataframe(df_ac, use_container_width=True)
-  st.markdown(f"**Total Ativo Circulante: R$ {tot_ac:.2f}**")
+  sub_demo_1, sub_demo_2, sub_demo_3, sub_demo_4, sub_demo_5, sub_demo_6 = st.tabs([
+      "⚖️ Balanço & DRE",
+      "📋 Balancete",
+      "💵 DFC (Fluxo de Caixa)",
+      "📈 DMPL (Mutações do PL)",
+      "🌐 DVA",
+      "📝 Notas & Declarações"
+  ])
 
-  st.markdown("###### Ativo Não Circulante")
-  df_anc, tot_anc = calcular_secao("--- ATIVO NÃO CIRCULANTE ---", "ativo")
-  st.dataframe(df_anc, use_container_width=True)
-  st.markdown(f"**Total Ativo Não Circulante: R$ {tot_anc:.2f}**")
-  st.markdown(f"### **TOTAL DO ATIVO: R$ {tot_ac + tot_anc:.2f}**")
-  st.markdown("---")
+  # --- SUB-ABA 1: BALANÇO & DRE ---
+  with sub_demo_1:
+    st.subheader("1. Balanço Patrimonial")
+    st.markdown("##### ATIVO")
+    st.markdown("###### Ativo Circulante")
+    df_ac, tot_ac = calcular_secao("--- ATIVO CIRCULANTE ---", "ativo")
+    st.dataframe(df_ac, use_container_width=True)
+    st.markdown(f"**Total Ativo Circulante: R$ {tot_ac:.2f}**")
 
-  st.subheader("2. DRE - Demonstração do Resultado do Exercício")
-  df_rec, _ = calcular_secao("--- RECEITAS ---", "passivo")
-  st.dataframe(df_rec, use_container_width=True)
-  st.markdown(f"**Receita Líquida: R$ {receita_liquida:.2f}**")
-  
-  df_desp, _ = calcular_secao("--- CUSTOS E DESPESAS ---", "ativo")
-  st.dataframe(df_desp, use_container_width=True)
-  st.markdown(f"### **Resultado Líquido do Exercício: R$ {lucro_liquido:.2f}**")
-  st.markdown("---")
+    st.markdown("###### Ativo Não Circulante")
+    df_anc, tot_anc = calcular_secao("--- ATIVO NÃO CIRCULANTE ---", "ativo")
+    st.dataframe(df_anc, use_container_width=True)
+    st.markdown(f"**Total Ativo Não Circulante: R$ {tot_anc:.2f}**")
+    st.markdown(f"### **TOTAL DO ATIVO: R$ {tot_ac + tot_anc:.2f}**")
+    st.markdown("---")
 
-  st.header("Livros Contábeis Obrigatórios")
-  st.subheader("Livro Diário")
-  st.dataframe(df_lanc, use_container_width=True)
+    st.subheader("2. DRE - Demonstração do Resultado do Exercício")
+    df_rec, _ = calcular_secao("--- RECEITAS ---", "passivo")
+    st.dataframe(df_rec, use_container_width=True)
+    st.markdown(f"**Receita Líquida: R$ {receita_liquida:.2f}**")
+    
+    df_desp, _ = calcular_secao("--- CUSTOS E DESPESAS ---", "ativo")
+    st.dataframe(df_desp, use_container_width=True)
+    st.markdown(f"### **Resultado Líquido do Exercício: R$ {lucro_liquido:.2f}**")
+
+  # --- SUB-ABA 2: BALANCETE ---
+  with sub_demo_2:
+    st.subheader("Balancete de Verificação (Partidas Dobradas)")
+    st.markdown("Conferência analítica dos saldos de débito e crédito de todas as contas.")
+    
+    dados_balancete = []
+    tot_deb_geral = 0.0
+    tot_cred_geral = 0.0
+    
+    for g_nome, c_lista in plano_de_contas.items():
+      for c_item in c_lista:
+        deb_c = df_lanc[df_lanc["Débito"] == c_item]["Valor"].sum()
+        cred_c = df_lanc[df_lanc["Crédito"] == c_item]["Valor"].sum()
+        if deb_c > 0 or cred_c > 0:
+          dados_balancete.append({
+              "Grupo": g_nome,
+              "Conta": c_item,
+              "Débitos (R$)": deb_c,
+              "Créditos (R$)": cred_c
+          })
+          tot_deb_geral += deb_c
+          tot_cred_geral += cred_c
+
+    df_balancete_res = pd.DataFrame(dados_balancete)
+    if not df_balancete_res.empty:
+      st.dataframe(df_balancete_res, use_container_width=True)
+      st.markdown(f"**Total de Débitos: R$ {tot_deb_geral:.2f}** | **Total de Créditos: R$ {tot_cred_geral:.2f}**")
+      if abs(tot_deb_geral - tot_cred_geral) < 0.01:
+        st.success("✅ Balancete em perfeito equilíbrio (Partidas Dobradas validadas).")
+      else:
+        st.error("⚠️ Atenção: Descompasso entre débitos e créditos no balancete.")
+    else:
+      st.info("Nenhum lançamento registado para exibir no balancete.")
+
+  # --- SUB-ABA 3: DFC ---
+  with sub_demo_3:
+    st.subheader("Demonstração do Fluxo de Caixa (DFC) - Método Direto")
+    st.markdown("Movimentações financeiras líquidas das contas de disponibilidades (Caixa e Bancos).")
+    
+    mov_caixa_deb = df_lanc[df_lanc["Débito"].str.contains("Caixa|Bancos|Aplicações", case=False, na=False)]["Valor"].sum()
+    mov_caixa_cred = df_lanc[df_lanc["Crédito"].str.contains("Caixa|Bancos|Aplicações", case=False, na=False)]["Valor"].sum()
+    fluxo_liquido_caixa = mov_caixa_deb - mov_caixa_cred
+    
+    st.metric("Fluxo de Caixa Líquido do Período", f"R$ {fluxo_liquido_caixa:.2f}")
+    st.markdown(f"- **Entradas nas Disponibilidades:** R$ {mov_caixa_deb:.2f}")
+    st.markdown(f"- **Saídas das Disponibilidades:** R$ {mov_caixa_cred:.2f}")
+
+  # --- SUB-ABA 4: DMPL (DEMONSTRAÇÃO DAS MUTAÇÕES DO PATRIMÔNIO LÍQUIDO) ---
+  with sub_demo_4:
+    st.subheader("Demonstração das Mutações do Patrimônio Líquido (DMPL)")
+    st.markdown("Evolução detalhada das contas componentes do Patrimônio Líquido.")
+
+    # Apuração dinâmica baseada nos lançamentos do capital e do resultado
+    capital_subscrito = df_lanc[df_lanc["Crédito"].str.contains("Capital Subscrito", case=False, na=False)]["Valor"].sum()
+    capital_a_realizar = df_lanc[df_lanc["Débito"].str.contains("Capital Subscrito a Realizar", case=False, na=False)]["Valor"].sum()
+    capital_realizado_liq = capital_subscrito - capital_a_realizar
+
+    dados_dmpl = [
+        {
+            "Especificação": "Saldos Iniciais do Período",
+            "Capital Social (R$)": 0.00,
+            "Reservas de Lucros (R$)": 0.00,
+            "Lucros/Prejuízos Acumulados (R$)": 0.00,
+            "Total do PL (R$)": 0.00
+        },
+        {
+            "Especificação": "Subscrição e Integralização de Capital",
+            "Capital Social (R$)": capital_realizado_liq,
+            "Reservas de Lucros (R$)": 0.00,
+            "Lucros/Prejuízos Acumulados (R$)": 0.00,
+            "Total do PL (R$)": capital_realizado_liq
+        },
+        {
+            "Especificação": "Lucro Líquido do Exercício",
+            "Capital Social (R$)": 0.00,
+            "Reservas de Lucros (R$)": 0.00,
+            "Lucros/Prejuízos Acumulados (R$)": lucro_liquido,
+            "Total do PL (R$)": lucro_liquido
+        },
+        {
+            "Especificação": "Saldos Finais do Período",
+            "Capital Social (R$)": capital_realizado_liq,
+            "Reservas de Lucros (R$)": 0.00,
+            "Lucros/Prejuízos Acumulados (R$)": lucro_liquido,
+            "Total do PL (R$)": capital_realizado_liq + lucro_liquido
+        }
+    ]
+
+    df_dmpl_res = pd.DataFrame(dados_dmpl)
+    st.dataframe(df_dmpl_res, use_container_width=True)
+    st.markdown(f"### **Patrimônio Líquido Total Final: R$ {capital_realizado_liq + lucro_liquido:.2f}**")
+
+  # --- SUB-ABA 5: DVA ---
+  with sub_demo_5:
+    st.subheader("Demonstração do Valor Adicionado (DVA)")
+    st.markdown("Riqueza gerada pela entidade e sua respectiva distribuição.")
+    
+    st.markdown(f"- **1. Receitas (Produção do Exercício):** R$ {total_receitas:.2f}")
+    st.markdown(f"- **2. Insumos Adquiridos de Terceiros (Custos):** R$ {total_custos:.2f}")
+    valor_adicionado_bruto = total_receitas - total_custos
+    st.markdown(f"### **= Valor Adicionado Bruto: R$ {valor_adicionado_bruto:.2f}**")
+    st.markdown(f"- **3. Valor Adicionado Líquido Distribuído (Pessoal, Impostos e Sócios):** R$ {max(0, valor_adicionado_bruto):.2f}")
+
+  # --- SUB-ABA 6: NOTAS & DECLARAÇÕES ---
+  with sub_demo_6:
+    st.subheader("Notas Explicativas e Declaração de Veracidade")
+    st.markdown("##### Declaração de Veracidade e Responsabilidade Técnica")
+    st.info(
+        "Declaramos para os devidos fins, sob as penas da lei e em conformidade com as normas profissionais "
+        "do Conselho Federal de Contabilidade (CFC), que as demonstrações contábeis e os relatórios gerados "
+        "pelo sistema KRONUS ERP refletem fielmente a realidade patrimonial, financeira e econômica da entidade."
+    )
+    st.markdown("---")
+    st.markdown("##### Notas Explicativas às Demonstrações Contábeis")
+    st.markdown(
+        "1. **Contexto Operacional:** A entidade opera em conformidade com o regime tributário selecionado e adota "
+        "as diretrizes da ITG 1000 para microempresas e empresas de pequeno porte.\n"
+        "2. **Critérios de Valoração:** Os elementos patrimoniais foram mensurados pelo custo histórico de aquisição.\n"
+        "3. **Eventos Subsequentes:** Não ocorreram eventos subsequentes à data de encerramento que pudessem alterar "
+        "de forma relevante a posição financeira da sociedade."
+    )
 
 
 # -------------------------------------------------------------------------
