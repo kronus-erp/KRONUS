@@ -575,23 +575,28 @@ with aba_lancamentos:
 
 
 # -------------------------------------------------------------------------
-# ABA 3: DEMONSTRAÇÕES CONTÁBEIS & RELATÓRIOS OFICIAIS
+# ABA 3: DEMONSTRAÇÕES CONTÁBEIS & RELATÓRIOS OFICIAIS (COM SELECTBOX RESPONSIVO)
 # -------------------------------------------------------------------------
 with aba_demonstracoes:
   st.header("📊 Demonstrações Contábeis e Relatórios Avançados")
   st.markdown("Relatórios financeiros gerados em conformidade com a legislação societária e ITG 1000.")
 
-  sub_demo_1, sub_demo_2, sub_demo_3, sub_demo_4, sub_demo_5, sub_demo_6 = st.tabs([
-      "⚖️ Balanço & DRE",
-      "📋 Balancete",
-      "💵 DFC (Fluxo de Caixa)",
-      "📈 DMPL (Mutações do PL)",
-      "🌐 DVA",
-      "📝 Notas & Declarações"
-  ])
+  opcao_demo = st.selectbox(
+      "📊 Selecione a Demonstração ou Relatório:",
+      [
+          "⚖️ Balanço & DRE",
+          "📋 Balancete",
+          "💵 DFC (Fluxo de Caixa)",
+          "📈 DMPL (Mutações do PL)",
+          "🌐 DVA",
+          "📝 Notas & Declarações"
+      ],
+      key="select_demo_responsivo"
+  )
 
-  # --- SUB-ABA 1: BALANÇO & DRE ---
-  with sub_demo_1:
+  st.markdown("---")
+
+  if opcao_demo == "⚖️ Balanço & DRE":
     st.subheader("1. Balanço Patrimonial")
     st.markdown("##### ATIVO")
     st.markdown("###### Ativo Circulante")
@@ -615,8 +620,7 @@ with aba_demonstracoes:
     st.dataframe(df_desp, use_container_width=True)
     st.markdown(f"### **Resultado Líquido do Exercício: R$ {lucro_liquido:.2f}**")
 
-  # --- SUB-ABA 2: BALANCETE ---
-  with sub_demo_2:
+  elif opcao_demo == "📋 Balancete":
     st.subheader("Balancete de Verificação (Partidas Dobradas)")
     st.markdown("Conferência analítica dos saldos de débito e crédito de todas as contas.")
     
@@ -649,8 +653,7 @@ with aba_demonstracoes:
     else:
       st.info("Nenhum lançamento registado para exibir no balancete.")
 
-  # --- SUB-ABA 3: DFC ---
-  with sub_demo_3:
+  elif opcao_demo == "💵 DFC (Fluxo de Caixa)":
     st.subheader("Demonstração do Fluxo de Caixa (DFC) - Método Direto")
     st.markdown("Movimentações financeiras líquidas das contas de disponibilidades (Caixa e Bancos).")
     
@@ -662,8 +665,7 @@ with aba_demonstracoes:
     st.markdown(f"- **Entradas nas Disponibilidades:** R$ {mov_caixa_deb:.2f}")
     st.markdown(f"- **Saídas das Disponibilidades:** R$ {mov_caixa_cred:.2f}")
 
-  # --- SUB-ABA 4: DMPL (DEMONSTRAÇÃO DAS MUTAÇÕES DO PATRIMÔNIO LÍQUIDO) ---
-  with sub_demo_4:
+  elif opcao_demo == "📈 DMPL (Mutações do PL)":
     st.subheader("Demonstração das Mutações do Patrimônio Líquido (DMPL)")
     st.markdown("Evolução detalhada das contas componentes do Patrimônio Líquido.")
 
@@ -706,8 +708,7 @@ with aba_demonstracoes:
     st.dataframe(df_dmpl_res, use_container_width=True)
     st.markdown(f"### **Patrimônio Líquido Total Final: R$ {capital_realizado_liq + lucro_liquido:.2f}**")
 
-  # --- SUB-ABA 5: DVA ---
-  with sub_demo_5:
+  elif opcao_demo == "🌐 DVA":
     st.subheader("Demonstração do Valor Adicionado (DVA)")
     st.markdown("Riqueza gerada pela entidade e sua respectiva distribuição.")
     
@@ -717,8 +718,7 @@ with aba_demonstracoes:
     st.markdown(f"### **= Valor Adicionado Bruto: R$ {valor_adicionado_bruto:.2f}**")
     st.markdown(f"- **3. Valor Adicionado Líquido Distribuído (Pessoal, Impostos e Sócios):** R$ {max(0, valor_adicionado_bruto):.2f}")
 
-  # --- SUB-ABA 6: NOTAS & DECLARAÇÕES ---
-  with sub_demo_6:
+  elif opcao_demo == "📝 Notas & Declarações":
     st.subheader("Notas Explicativas e Declaração de Veracidade")
     st.markdown("##### Declaração de Veracidade e Responsabilidade Técnica")
     st.info(
