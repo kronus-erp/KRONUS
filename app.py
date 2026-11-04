@@ -79,6 +79,7 @@ plano_inicial_dict = {
     ],
     "--- PATRIMÔNIO LÍQUIDO ---": [
         "2.3.1.01 - Capital Subscrito / Realizado",
+        "2.3.1.02 - Capital Subscrito a Realizar",
         "2.3.2.01 - Lucros Acumulados / Reserva de Lucros",
     ],
     "--- RECEITAS ---": [
@@ -666,7 +667,6 @@ with aba_demonstracoes:
     st.subheader("Demonstração das Mutações do Patrimônio Líquido (DMPL)")
     st.markdown("Evolução detalhada das contas componentes do Patrimônio Líquido.")
 
-    # Apuração dinâmica baseada nos lançamentos do capital e do resultado
     capital_subscrito = df_lanc[df_lanc["Crédito"].str.contains("Capital Subscrito", case=False, na=False)]["Valor"].sum()
     capital_a_realizar = df_lanc[df_lanc["Débito"].str.contains("Capital Subscrito a Realizar", case=False, na=False)]["Valor"].sum()
     capital_realizado_liq = capital_subscrito - capital_a_realizar
