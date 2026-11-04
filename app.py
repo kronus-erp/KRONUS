@@ -14,20 +14,15 @@ st.set_page_config(
 # Estilização CSS Moderna - Padrão Corporativo Kronus (Preto, Branco e Azul Claro Neon)
 st.markdown("""
 <style>
-    /* Fundo geral e fontes */
     .stApp {
         background-color: #0b0f19;
         color: #ffffff;
         font-family: 'Inter', sans-serif;
     }
-    
-    /* Cabeçalhos */
     h1, h2, h3, h4, h5, h6 {
         color: #f8fafc !important;
         font-weight: 700;
     }
-    
-    /* Cards de Métricas */
     .metric-card {
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         border: 1px solid #38bdf8;
@@ -49,8 +44,6 @@ st.markdown("""
         font-weight: 700;
         margin-top: 4px;
     }
-
-    /* Botões Personalizados */
     .stButton > button {
         background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
         color: #ffffff;
@@ -66,15 +59,6 @@ st.markdown("""
         box-shadow: 0 6px 15px rgba(56, 189, 248, 0.5);
         transform: translateY(-1px);
     }
-
-    /* Inputs e Selectboxes */
-    stTextInput, stSelectbox, stDateInput, stNumberInput {
-        background-color: #1e293b !important;
-        border-radius: 8px !important;
-        color: #ffffff !important;
-    }
-
-    /* Sidebar */
     [data-testid="stSidebar"] {
         background-color: #020617;
         border-right: 1px solid #1e293b;
@@ -88,7 +72,14 @@ FILE_RAZAO = "razao_analitico_caixa.csv"
 FILE_EMPRESA = "cadastro_empresa.csv"
 
 def init_csvs():
-    if not os.path.exists(FILE_PLANO):
+    # Força a recriação segura dos CSVs se não existirem ou estiverem vazios/corrompidos
+    try:
+        if not os.path.exists(FILE_PLANO) or os.path.getsize(FILE_PLANO) == 0:
+            raise Exception()
+        df_test = pd.read_csv(FILE_PLANO)
+        if "Codigo" not in df_test.columns or "Conta" not in df_test.columns:
+            raise Exception()
+    except:
         df_plano = pd.DataFrame([
             {"Codigo": "1.1.1.01", "Conta": "Caixa Geral", "Tipo": "Ativo Circulante"},
             {"Codigo": "1.1.1.02", "Conta": "Bancos Conta Movimento", "Tipo": "Ativo Circulante"},
@@ -97,17 +88,25 @@ def init_csvs():
         ])
         df_plano.to_csv(FILE_PLANO, index=False)
         
-    if not os.path.exists(FILE_RAZAO):
+    try:
+        if not os.path.exists(FILE_RAZAO) or os.path.getsize(FILE_RAZAO) == 0:
+            raise Exception()
+        pd.read_csv(FILE_RAZAO)
+    except:
         df_razao = pd.DataFrame(columns=["Data", "Historico", "Debito_Conta", "Debito_Valor", "Credito_Conta", "Credito_Valor"])
         df_razao.to_csv(FILE_RAZAO, index=False)
 
-    if not os.path.exists(FILE_EMPRESA):
+    try:
+        if not os.path.exists(FILE_EMPRESA) or os.path.getsize(FILE_EMPRESA) == 0:
+            raise Exception()
+        pd.read_csv(FILE_EMPRESA)
+    except:
         df_empresa = pd.DataFrame([{"Razao_Social": "KRONUS EMPRESA TESTE LTDA", "CNPJ": "00.000.000/0001-00", "Regime": "Lucro Real"}])
         df_empresa.to_csv(FILE_EMPRESA, index=False)
 
 init_csvs()
 
-# Carregar Dados
+# Carregar Dados com segurança
 df_plano = pd.read_csv(FILE_PLANO)
 df_razao = pd.read_csv(FILE_RAZAO)
 
@@ -233,7 +232,7 @@ elif modulo == "Lançamentos Contábeis":
 # -------------------------------------------------------------
 elif modulo == "Demonstrações (Balanço / DRE)":
     st.markdown("# 📈 Demonstrações Contábeis Oficiais")
-    st.markdown("Acompanhamento estruturado do Balanço Patrimonial e DRE baseados nos razonetes.")
+    st.markdown("Acompanhamento estruturado do Balanço Patrimonial e DRE.")
     
     tab_dre, tab_bp = st.tabs(["DRE - Demonstração do Resultado", "Balanço Patrimonial"])
     
@@ -263,7 +262,7 @@ elif modulo == "Demonstrações (Balanço / DRE)":
             st.markdown("**Total Passivo + PL:** **R$ 1.500,00**")
 
 # -------------------------------------------------------------
-# MÓDULO 5: eSOCIAL (Com S-2230 e S-1299)
+# MÓDULO 5: eSOCIAL
 # -------------------------------------------------------------
 elif modulo == "Módulo eSocial":
     st.markdown("# 🏢 Gestão de Eventos eSocial")
